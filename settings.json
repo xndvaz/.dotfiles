@@ -1,0 +1,16 @@
+{
+    "window.zoomLevel": 0,
+    "workbench.colorTheme": "Min Dark",
+    "symbols.hidesExplorerArrows": false,
+    "workbench.iconTheme": "symbols",
+    "editor.fontFamily": "JetBrains Mono",
+    "editor.fontSize": 12,
+    "editor.lineHeight": 1.8,
+    "editor.rulers": [80, 120],
+    "explorer.compactFolders": false,
+    "editor.semanticHighlighting.enabled": false,
+    "breadcrumbs.enabled": false,
+    "editor.minimap.enabled": false,
+    "workbench.layoutControl.enabled": false,
+    "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font"
+}
