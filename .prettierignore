@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+bower_components/
+
+# Build / output
+dist/
+build/
+out/
+coverage/
+
+# Hugo
+public/
+resources/
+.hugo_build.lock
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Lockfiles / generated
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Minified
+*.min.js
+*.min.css

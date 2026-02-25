@@ -1,0 +1,20 @@
+# ------------------------------------------------------------
+# ZSH bootstrap loader
+# ------------------------------------------------------------
+# This file intentionally stays minimal.
+# It dynamically loads all modular shell configuration
+# files located inside ~/.dotfiles/shell.
+#
+# This architecture allows:
+# - Clean separation of concerns
+# - Easier maintenance
+# - Safer long-term evolution
+# - Version control via dotfiles repository
+# ------------------------------------------------------------
+
+if [ -d "$HOME/.dotfiles/shell" ]; then
+  for file in "$HOME/.dotfiles/shell/"*.zsh; do
+    # Only source readable files
+    [ -r "$file" ] && source "$file"
+  done
+fi
