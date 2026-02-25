@@ -1,0 +1,61 @@
+{
+  "workbench.colorTheme": "Min Dark",
+  "workbench.iconTheme": "symbols",
+  "workbench.colorCustomizations": {
+    "editorRuler.foreground": "#444444"
+  },
+  "editor.fontFamily": "JetBrains Mono",
+  "editor.fontSize": 12,
+  "editor.lineHeight": 1.6,
+  "editor.formatOnSave": true,
+  "editor.minimap.enabled": false,
+  "editor.rulers": [
+    100
+  ],
+  "editor.renderLineHighlight": "gutter",
+  "editor.guides.indentation": true,
+  "editor.guides.highlightActiveIndentation": true,
+  "editor.renderWhitespace": "selection",
+  "editor.cursorStyle": "line",
+  "editor.cursorWidth": 2,
+  "editor.cursorBlinking": "smooth",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.smoothScrolling": true,
+  "editor.scrollBeyondLastLine": false,
+  "editor.fastScrollSensitivity": 5,
+  "editor.padding.top": 10,
+  "editor.padding.bottom": 10,
+  "breadcrumbs.enabled": false,
+  "explorer.compactFolders": false,
+  "symbols.hidesExplorerArrows": false,
+  "window.zoomLevel": 0,
+  "workbench.layoutControl.enabled": false,
+  "prettier.requireConfig": true,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "on"
+  },
+  "security.workspace.trust.untrustedFiles": "open",
+  "explorer.confirmDelete": false
+}
