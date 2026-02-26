@@ -2,11 +2,11 @@
 
 > A layered, reproducible macOS development foundation.
 
-This repository contains a modular VS Code + ZSH setup designed for\
+This repository contains a modular VS Code + ZSH setup designed for
 clarity, consistency, and long-term maintainability.
 
-No hidden automation.\
-No black-box scripts.\
+No hidden automation.
+No black-box scripts.
 No machine-specific hacks.
 
 Just explicit, readable infrastructure.
@@ -19,14 +19,14 @@ Your environment shapes how you think.
 
 This setup is built around:
 
-- 🧱 Structure over improvisation\
-- 🎯 Explicit formatting rules\
-- 🧩 Modular shell architecture\
-- 🔁 Reproducibility across machines\
-- 🔐 Signed commits by default (optional bootstrap)\
+- 🧱 Structure over improvisation
+- 🎯 Explicit formatting rules
+- 🧩 Modular shell architecture
+- 🔁 Reproducibility across machines
+- 🔐 Signed commits by default (optional bootstrap)
 - 🧼 Minimalism without fragility
 
-Everything is readable.\
+Everything is readable.
 Everything is intentional.
 
 ---
@@ -35,11 +35,11 @@ Everything is intentional.
 
 This setup can be useful if you:
 
-- Want a clean starting point for macOS development\
-- Prefer explicit configuration over automation magic\
-- Care about formatting consistency\
-- Like modular shell architecture\
-- Want something reproducible across machines\
+- Want a clean starting point for macOS development
+- Prefer explicit configuration over automation magic
+- Care about formatting consistency
+- Like modular shell architecture
+- Want something reproducible across machines
 - Want GitHub "Verified" commit signatures using SSH
 
 You can use it as-is, fork it, or adapt parts of it.
@@ -75,9 +75,9 @@ It's a foundation --- not a rigid framework.
 
 Controls formatting engines, UI ergonomics, and behavior.
 
-- Explicit default formatters\
-- Controlled Prettier behavior (`requireConfig`)\
-- Stable visual rules (ruler, whitespace, cursor behavior)\
+- Explicit default formatters
+- Controlled Prettier behavior (`requireConfig`)
+- Stable visual rules (ruler, whitespace, cursor behavior)
 - Minimal noise, predictable output
 
 ---
@@ -88,9 +88,9 @@ ZSH configuration is modular --- not a monolithic `.zshrc`.
 
 Each concern lives in its own file:
 
-- Base shell behavior\
-- Aliases\
-- Path management\
+- Base shell behavior
+- Aliases
+- Path management
 - Environment exports
 
 This avoids long-term configuration entropy.
@@ -101,9 +101,9 @@ This avoids long-term configuration entropy.
 
 Formatting is explicit and project-aware.
 
-- Prettier runs only when a project defines it.\
-- Black formats Python.\
-- JSON uses VS Code's native formatter.\
+- Prettier runs only when a project defines it.
+- Black formats Python.
+- JSON uses VS Code's native formatter.
 - `.editorconfig` enforces cross-tool consistency.
 
 No implicit formatting surprises.
@@ -114,8 +114,8 @@ No implicit formatting surprises.
 
 The installer can optionally configure:
 
-- `gpg.format = ssh`\
-- `commit.gpgsign = true`\
+- `gpg.format = ssh`
+- `commit.gpgsign = true`
 - `user.signingkey` from your active SSH agent
 
 This enables **SSH-based commit signing**, allowing GitHub to display:
@@ -126,8 +126,8 @@ if your SSH key is added as a **Signing Key** in GitHub.
 
 ### Important
 
-- The script does not create SSH keys.\
-- The script does not manage your SSH agent.\
+- The script does not create SSH keys.
+- The script does not manage your SSH agent.
 - You must manually add your SSH public key in:
 
 GitHub → Settings → SSH and GPG Keys → New signing key
@@ -144,10 +144,10 @@ Safe by default. No overwrite without confirmation.
 
 It:
 
-- Backs up existing configs\
-- Creates symlinks\
-- Installs extensions\
-- Optionally configures SSH commit signing\
+- Backs up existing configs
+- Creates symlinks
+- Installs extensions
+- Optionally configures SSH commit signing
 - Is safe to re-run
 
 Idempotent by design.
@@ -162,13 +162,13 @@ This setup assumes a clean macOS environment.
 
 ## 1️⃣ Install VS Code
 
-Download:\
+Download:
 https://code.visualstudio.com/
 
 After installation:
 
-Open VS Code →\
-Cmd + Shift + P →\
+Open VS Code →
+Cmd + Shift + P →
 Run:
 
 Shell Command: Install 'code' command in PATH
@@ -183,7 +183,7 @@ code --version
 
 ## 2️⃣ Install JetBrains Mono
 
-Download:\
+Download:
 https://www.jetbrains.com/lp/mono/
 
 Install the font in macOS.
@@ -240,8 +240,8 @@ During installation, you may be asked:
 
 If you answer **yes**, the script will:
 
-- Detect available SSH keys from your agent\
-- Let you choose one (if multiple exist)\
+- Detect available SSH keys from your agent
+- Let you choose one (if multiple exist)
 - Configure Git for SSH commit signing
 
 ---
@@ -258,9 +258,9 @@ Signed commits ready.
 
 This repository favors:
 
-- Transparency over abstraction\
-- Explicit behavior over silent automation\
-- Portability over local hacks\
+- Transparency over abstraction
+- Explicit behavior over silent automation
+- Portability over local hacks
 - Stability over trend adoption
 
 It is designed to age well.
