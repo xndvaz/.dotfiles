@@ -57,5 +57,6 @@
     "editor.wordWrap": "on"
   },
   "security.workspace.trust.untrustedFiles": "open",
-  "explorer.confirmDelete": false
+  "explorer.confirmDelete": false,
+  "git.confirmSync": false
 }
