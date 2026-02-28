@@ -5,9 +5,7 @@
 This repository contains a modular VS Code + ZSH setup designed for
 clarity, consistency, and long-term maintainability.
 
-No hidden automation.
-No black-box scripts.
-No machine-specific hacks.
+No hidden automation. No black-box scripts. No machine-specific hacks.
 
 Just explicit, readable infrastructure.
 
@@ -23,11 +21,10 @@ This setup is built around:
 - 🎯 Explicit formatting rules
 - 🧩 Modular shell architecture
 - 🔁 Reproducibility across machines
-- 🔐 Signed commits by default (optional bootstrap)
+- 🔐 Signed commits (optional bootstrap)
 - 🧼 Minimalism without fragility
 
-Everything is readable.
-Everything is intentional.
+Everything is readable. Everything is intentional.
 
 ---
 
@@ -44,7 +41,7 @@ This setup can be useful if you:
 
 You can use it as-is, fork it, or adapt parts of it.
 
-It's a foundation --- not a rigid framework.
+It's a foundation — not a rigid framework.
 
 ---
 
@@ -53,12 +50,13 @@ It's a foundation --- not a rigid framework.
 ```text
 ~/.dotfiles
 ├── scripts/          → Installation orchestration
-│   └── install.sh
+│   ├── install.sh    → Bootstrap + environment provisioning
+│   └── doctor.sh     → Environment diagnostics & validation
 ├── shell/            → Modular ZSH configuration
-│   ├── base.zsh
-│   ├── aliases.zsh
-│   ├── paths.zsh
-│   └── exports.zsh
+│   ├── base.zsh      → Core shell behavior
+│   ├── aliases.zsh   → Command shortcuts
+│   ├── paths.zsh     → Homebrew-aware PATH management
+│   └── exports.zsh   → Environment variables & SSH agent preference
 ├── vscode/           → VS Code configuration
 │   ├── settings.json
 │   ├── keybindings.json
@@ -84,7 +82,7 @@ Controls formatting engines, UI ergonomics, and behavior.
 
 ## 🐚 Shell Layer
 
-ZSH configuration is modular --- not a monolithic `.zshrc`.
+ZSH configuration is modular — not a monolithic `.zshrc`.
 
 Each concern lives in its own file:
 
@@ -97,16 +95,29 @@ This avoids long-term configuration entropy.
 
 ---
 
-## 📏 Formatting Layer
+## 🛣 PATH Management
 
-Formatting is explicit and project-aware.
+`paths.zsh` ensures:
 
-- Prettier runs only when a project defines it.
-- Black formats Python.
-- JSON uses VS Code's native formatter.
-- `.editorconfig` enforces cross-tool consistency.
+- Homebrew tools are prioritized
+- Works on Apple Silicon and Intel
+- No hardcoded paths
+- Prevents common PATH duplication issues
+- Deterministic tool resolution
 
-No implicit formatting surprises.
+---
+
+## 🔐 SSH Agent Strategy
+
+This setup prefers the **1Password SSH Agent** when available.
+
+Behavior:
+
+- If 1Password agent socket exists → prefer it
+- Otherwise → fallback to macOS launchd agent
+- `doctor.sh --fix` can force the current session to use 1Password
+
+No key generation. No key management. Only environment alignment.
 
 ---
 
@@ -132,9 +143,35 @@ if your SSH key is added as a **Signing Key** in GitHub.
 
 GitHub → Settings → SSH and GPG Keys → New signing key
 
-The setup supports multiple SSH keys and lets you choose interactively.
-
 Safe by default. No overwrite without confirmation.
+
+---
+
+## 🧪 Doctor Layer
+
+`scripts/doctor.sh` validates your environment.
+
+It checks:
+
+- Bash version (>=4)
+- Homebrew presence and prefix
+- PATH hygiene and ordering
+- Python origin
+- VS Code CLI availability
+- SSH agent state
+- Git SSH signing configuration
+
+Run anytime:
+
+```bash
+~/.dotfiles/scripts/doctor.sh
+```
+
+Or:
+
+```bash
+~/.dotfiles/scripts/doctor.sh --fix
+```
 
 ---
 
@@ -144,10 +181,12 @@ Safe by default. No overwrite without confirmation.
 
 It:
 
+- Ensures Bash 4+ (auto-bootstrap via Homebrew if needed)
 - Backs up existing configs
 - Creates symlinks
 - Installs extensions
 - Optionally configures SSH commit signing
+- Runs doctor automatically after installation
 - Is safe to re-run
 
 Idempotent by design.
@@ -162,14 +201,11 @@ This setup assumes a clean macOS environment.
 
 ## 1️⃣ Install VS Code
 
-Download:
-https://code.visualstudio.com/
+Download: https://code.visualstudio.com/
 
 After installation:
 
-Open VS Code →
-Cmd + Shift + P →
-Run:
+Open VS Code → Cmd + Shift + P → Run:
 
 Shell Command: Install 'code' command in PATH
 
@@ -183,8 +219,7 @@ code --version
 
 ## 2️⃣ Install JetBrains Mono
 
-Download:
-https://www.jetbrains.com/lp/mono/
+Download: https://www.jetbrains.com/lp/mono/
 
 Install the font in macOS.
 
@@ -195,7 +230,7 @@ Restart VS Code after installation.
 ## 3️⃣ Install Homebrew
 
 ```bash
-/ bin / bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
 Verify:
@@ -238,19 +273,13 @@ During installation, you may be asked:
 
 > Do you want to configure SSH commit signing? (y/N)
 
-If you answer **yes**, the script will:
-
-- Detect available SSH keys from your agent
-- Let you choose one (if multiple exist)
-- Configure Git for SSH commit signing
+After installation, the doctor runs automatically.
 
 ---
 
 ## 7️⃣ Restart VS Code
 
-Environment restored.
-
-Signed commits ready.
+Environment restored. Signed commits ready.
 
 ---
 
