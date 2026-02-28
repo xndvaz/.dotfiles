@@ -58,5 +58,6 @@
   },
   "security.workspace.trust.untrustedFiles": "open",
   "explorer.confirmDelete": false,
-  "git.confirmSync": false
+  "git.confirmSync": false,
+  "git.autofetch": true
 }
