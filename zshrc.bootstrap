@@ -1,20 +1,28 @@
 # ------------------------------------------------------------
 # ZSH bootstrap loader
 # ------------------------------------------------------------
-# This file intentionally stays minimal.
-# It dynamically loads all modular shell configuration
-# files located inside ~/.dotfiles/shell.
+# Minimal loader that sources all modular shell configuration
+# files from ~/.dotfiles/shell.
 #
-# This architecture allows:
-# - Clean separation of concerns
-# - Easier maintenance
-# - Safer long-term evolution
-# - Version control via dotfiles repository
+# Modules are loaded alphabetically.
+# Numeric prefixes enforce deterministic order:
+#   10-base.zsh
+#   20-exports.zsh
+#   30-paths.zsh
+#   40-aliases.zsh
+#
+# The (N) glob modifier prevents errors if no files exist.
 # ------------------------------------------------------------
 
-if [ -d "$HOME/.dotfiles/shell" ]; then
-  for file in "$HOME/.dotfiles/shell/"*.zsh; do
-    # Only source readable files
-    [ -r "$file" ] && source "$file"
+# Prevent double loading
+[[ -n "${DOTFILES_BOOTSTRAPPED:-}" ]] && return
+DOTFILES_BOOTSTRAPPED=1
+
+DOTFILES_SHELL_DIR="$HOME/.dotfiles/shell"
+
+if [[ -d "$DOTFILES_SHELL_DIR" ]]; then
+  local file
+  for file in "$DOTFILES_SHELL_DIR"/*.zsh(N); do
+    [[ -r "$file" ]] && source "$file"
   done
 fi

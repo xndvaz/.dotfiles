@@ -12,6 +12,33 @@ alias gc="git commit -m"
 alias gp="git push"
 alias gl="git log --oneline --graph --decorate"
 
+# ---- Conventional commits helpers ----
+# Fast helpers to generate Conventional Commit messages
+
+gfeat() {
+  git commit -m "feat($1): ${@:2}"
+}
+
+gfix() {
+  git commit -m "fix($1): ${@:2}"
+}
+
+gdocs() {
+  git commit -m "docs($1): ${@:2}"
+}
+
+gref() {
+  git commit -m "refactor($1): ${@:2}"
+}
+
+gchore() {
+  git commit -m "chore($1): ${@:2}"
+}
+
+gtest() {
+  git commit -m "test($1): ${@:2}"
+}
+
 # ---- Navigation ----
 alias ll="ls -lah"
 alias ..="cd .."
