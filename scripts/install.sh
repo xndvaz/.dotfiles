@@ -50,6 +50,7 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # Purpose:
 #   Bootstrap this dotfiles repo on macOS:
+#   - Link ~/.zshrc to the repo bootstrap loader.
 #   - Link VS Code settings/keybindings from the repo into VS Code User folder.
 #   - Install VS Code extensions listed in vscode/extensions.txt.
 #   - Optionally configure Git SSH commit signing (GitHub Verified).
@@ -146,6 +147,21 @@ link_file () {
   echo "Linked: $target -> $source"
 }
 
+# -----------------------------------------------------------------------------
+# Zsh: bootstrap ~/.zshrc from repo
+# -----------------------------------------------------------------------------
+ensure_zsh_bootstrap () {
+  local repo_bootstrap="$REPO_ROOT/zshrc.bootstrap"
+  local user_zshrc="$HOME/.zshrc"
+
+  if [[ ! -f "$repo_bootstrap" ]]; then
+    echo "Error: expected file not found: $repo_bootstrap" >&2
+    exit 1
+  fi
+
+  link_file "$repo_bootstrap" "$user_zshrc"
+}
+
 have_cmd () { command -v "$1" >/dev/null 2>&1; }
 
 # -----------------------------------------------------------------------------
@@ -170,11 +186,9 @@ install_extensions () {
   echo "Installing VS Code extensions from: $list_file"
 
   while IFS= read -r ext || [[ -n "$ext" ]]; do
-    # Trim whitespace
     ext="${ext#"${ext%%[![:space:]]*}"}"
     ext="${ext%"${ext##*[![:space:]]}"}"
 
-    # Skip empty/comment lines
     [[ -z "$ext" ]] && continue
     [[ "$ext" == \#* ]] && continue
 
@@ -227,7 +241,6 @@ configure_git_ssh_signing () {
   git config --global gpg.format ssh
   git config --global commit.gpgsign true
 
-  # Collect ed25519 keys from the agent.
   mapfile -t KEY_LINES < <(ssh-add -L 2>/dev/null | awk '$1=="ssh-ed25519"{print}')
 
   if [[ "${#KEY_LINES[@]}" -eq 0 ]]; then
@@ -332,6 +345,11 @@ configure_git_identity () {
 }
 
 # -----------------------------------------------------------------------------
+# Execution: Zsh bootstrap
+# -----------------------------------------------------------------------------
+ensure_zsh_bootstrap
+
+# -----------------------------------------------------------------------------
 # Execution: VS Code links
 # -----------------------------------------------------------------------------
 link_file "$REPO_SETTINGS" "$VSCODE_SETTINGS"
@@ -368,9 +386,6 @@ echo ""
 echo "== Post-install: dotfiles doctor =="
 
 if [[ -f "$DOCTOR_SCRIPT" ]]; then
-  # Detect 1Password SSH agent socket.
-  # With `set -euo pipefail`, a failing `find` pipeline can abort the script.
-  # Make this detection explicitly non-fatal with `|| true`.
   OP_SSH_SOCK="$(
     find "$HOME/Library/Group Containers" -maxdepth 4 -type s -name "agent.sock" \
       -path "*com.1password*/t/agent.sock" -print 2>/dev/null | head -n 1 || true
