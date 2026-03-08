@@ -1,25 +1,48 @@
 type(scope): short description
 
-# Types
-# feat     new feature
-# fix      bug fix
-# refactor code change that does not change behavior
-# docs     documentation changes
-# chore    maintenance or configuration
-# test     adding or updating tests
-# style    formatting only
-
+# --------------------------------------------------------------------
+# Commit message guidelines
+#
+# Format
+# type(scope): short description
+#
 # Example
-# feat(bootstrap): add doctor command
-# fix(ssh): make SSH agent detection portable
-# docs(readme): update setup instructions
-
+# feat(shell): add SSH agent auto-detection
+#
+# --------------------------------------------------------------------
+# Types
+#
+# feat      new feature
+# fix       bug fix
+# refactor  code change that does not change behavior
+# docs      documentation changes
+# chore     maintenance or configuration
+# test      adding or updating tests
+# style     formatting only (no code change)
+#
+# --------------------------------------------------------------------
 # Scopes used in this repository
-# bootstrap
-# shell
-# ssh
-# git
-# vscode
-# repo
-# readme
-# sync
+#
+# bootstrap   shell bootstrap and initialization
+# shell       shell modules and environment
+# ssh         SSH agent and signing configuration
+# git         git configuration and tooling
+# vscode      VS Code configuration
+# repo        repository structure
+# docs        documentation
+#
+# --------------------------------------------------------------------
+# Tips
+#
+# Use imperative mood
+# Good: "add feature"
+# Bad:  "added feature"
+#
+# Keep subject under ~72 characters.
+#
+# Body (optional)
+# Explain WHY the change was made if not obvious.
+#
+# Footer (optional)
+# Reference issues or breaking changes.
+# --------------------------------------------------------------------
