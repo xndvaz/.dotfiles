@@ -1,0 +1,25 @@
+type(scope): short description
+
+# Types
+# feat     new feature
+# fix      bug fix
+# refactor code change that does not change behavior
+# docs     documentation changes
+# chore    maintenance or configuration
+# test     adding or updating tests
+# style    formatting only
+
+# Example
+# feat(bootstrap): add doctor command
+# fix(ssh): make SSH agent detection portable
+# docs(readme): update setup instructions
+
+# Scopes used in this repository
+# bootstrap
+# shell
+# ssh
+# git
+# vscode
+# repo
+# readme
+# sync

@@ -32,3 +32,6 @@ yarn.lock
 # Minified
 *.min.js
 *.min.css
+
+# Tooling / formatting
+git/commit-template
