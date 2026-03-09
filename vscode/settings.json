@@ -59,5 +59,6 @@
   "security.workspace.trust.untrustedFiles": "open",
   "explorer.confirmDelete": false,
   "git.confirmSync": false,
-  "git.autofetch": true
+  "git.autofetch": true,
+  "chat.viewSessions.orientation": "stacked"
 }
