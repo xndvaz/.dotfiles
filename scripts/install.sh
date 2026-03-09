@@ -53,6 +53,8 @@ set -euo pipefail
 #   - Link ~/.zshrc to the repo bootstrap loader.
 #   - Link VS Code settings/keybindings from the repo into VS Code User folder.
 #   - Install VS Code extensions listed in vscode/extensions.txt.
+#   - Configure Git editor for blocking interactive operations.
+#   - Configure Git commit template from this repo.
 #   - Optionally configure Git SSH commit signing (GitHub Verified).
 #   - Optionally configure Git identity (user.name, user.email).
 #   - Run doctor at the end (and auto-fix SSH agent for this session if possible).
@@ -79,7 +81,7 @@ echo "== Dotfiles install starting =="
 echo "Repo root: $REPO_ROOT"
 
 # -----------------------------------------------------------------------------
-# VS Code paths (macOS Stable build)
+# Paths
 # -----------------------------------------------------------------------------
 VSCODE_USER_DIR="$HOME/Library/Application Support/Code/User"
 
@@ -90,6 +92,9 @@ REPO_EXTENSIONS_LIST="$REPO_VSCODE_DIR/extensions.txt"
 
 VSCODE_SETTINGS="$VSCODE_USER_DIR/settings.json"
 VSCODE_KEYBINDINGS="$VSCODE_USER_DIR/keybindings.json"
+
+REPO_ZSH_BOOTSTRAP="$REPO_ROOT/zshrc.bootstrap"
+REPO_GIT_COMMIT_TEMPLATE="$REPO_ROOT/git/commit-template"
 
 # -----------------------------------------------------------------------------
 # Safety checks
@@ -147,22 +152,21 @@ link_file () {
   echo "Linked: $target -> $source"
 }
 
+have_cmd () { command -v "$1" >/dev/null 2>&1; }
+
 # -----------------------------------------------------------------------------
 # Zsh: bootstrap ~/.zshrc from repo
 # -----------------------------------------------------------------------------
 ensure_zsh_bootstrap () {
-  local repo_bootstrap="$REPO_ROOT/zshrc.bootstrap"
   local user_zshrc="$HOME/.zshrc"
 
-  if [[ ! -f "$repo_bootstrap" ]]; then
-    echo "Error: expected file not found: $repo_bootstrap" >&2
+  if [[ ! -f "$REPO_ZSH_BOOTSTRAP" ]]; then
+    echo "Error: expected file not found: $REPO_ZSH_BOOTSTRAP" >&2
     exit 1
   fi
 
-  link_file "$repo_bootstrap" "$user_zshrc"
+  link_file "$REPO_ZSH_BOOTSTRAP" "$user_zshrc"
 }
-
-have_cmd () { command -v "$1" >/dev/null 2>&1; }
 
 # -----------------------------------------------------------------------------
 # VS Code: install extensions listed in a file
@@ -199,6 +203,68 @@ install_extensions () {
   done < "$list_file"
 
   echo "Extensions install step done."
+}
+
+# -----------------------------------------------------------------------------
+# Git: editor for interactive operations
+# -----------------------------------------------------------------------------
+configure_git_editor () {
+  echo ""
+  echo "== Git editor =="
+
+  if ! have_cmd git; then
+    echo "Notice: git not found. Skipping editor setup."
+    return 0
+  fi
+
+  if ! have_cmd code; then
+    echo "Notice: 'code' CLI not found in PATH."
+    echo "Skipping Git editor setup."
+    return 0
+  fi
+
+  local desired current
+  desired="code --wait"
+  current="$(git config --global --get core.editor || true)"
+
+  if [[ "$current" == "$desired" ]]; then
+    echo "Already configured: core.editor=$desired"
+    return 0
+  fi
+
+  git config --global core.editor "$desired"
+  echo "Configured: core.editor=$desired"
+}
+
+# -----------------------------------------------------------------------------
+# Git: commit template from repo
+# -----------------------------------------------------------------------------
+configure_git_commit_template () {
+  echo ""
+  echo "== Git commit template =="
+
+  if ! have_cmd git; then
+    echo "Notice: git not found. Skipping commit template setup."
+    return 0
+  fi
+
+  if [[ ! -f "$REPO_GIT_COMMIT_TEMPLATE" ]]; then
+    echo "Notice: commit template not found: $REPO_GIT_COMMIT_TEMPLATE"
+    echo "Skipping commit template setup."
+    return 0
+  fi
+
+  local desired current
+  desired="$REPO_GIT_COMMIT_TEMPLATE"
+  current="$(git config --global --get commit.template || true)"
+
+  if [[ "$current" == "$desired" ]]; then
+    echo "Already configured: commit.template=$desired"
+    return 0
+  fi
+
+  git config --global commit.template "$desired"
+  echo "Configured: commit.template=$desired"
 }
 
 # -----------------------------------------------------------------------------
@@ -354,7 +420,6 @@ ensure_zsh_bootstrap
 # -----------------------------------------------------------------------------
 link_file "$REPO_SETTINGS" "$VSCODE_SETTINGS"
 
-# Keybindings: ensure a valid JSON file exists in the repo.
 if [[ ! -f "$REPO_KEYBINDINGS" ]]; then
   mkdir -p "$REPO_VSCODE_DIR"
   printf '%s\n' '[]' > "$REPO_KEYBINDINGS"
@@ -371,6 +436,8 @@ install_extensions "$REPO_EXTENSIONS_LIST"
 # Optional: Git steps (macOS-only)
 # -----------------------------------------------------------------------------
 if [[ "$(uname -s)" == "Darwin" ]]; then
+  configure_git_editor
+  configure_git_commit_template
   configure_git_ssh_signing
   configure_git_identity
 else
