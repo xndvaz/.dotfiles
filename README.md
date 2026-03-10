@@ -49,7 +49,8 @@ It's a foundation — not a rigid framework.
 <dotfiles-repo-root>
 ├── scripts/          → Installation orchestration
 │   ├── install.sh    → Bootstrap + environment provisioning
-│   └── doctor.sh     → Environment diagnostics & validation
+│   ├── doctor.sh     → Environment diagnostics & validation
+│   └── test-install-flags.sh → Installer CLI smoke tests
 ├── shell/            → Modular ZSH configuration
 │   ├── 10-base.zsh   → Core shell behavior
 │   ├── 20-exports.zsh → Environment variables & SSH agent preference
@@ -59,6 +60,8 @@ It's a foundation — not a rigid framework.
 │   ├── settings.json
 │   ├── keybindings.json
 │   └── extensions.txt
+├── .github/workflows/ci.yml → Shell quality gates
+├── CHANGELOG.md      → Release notes history
 ├── .editorconfig     → Cross-tool formatting baseline
 ├── .prettierrc       → Explicit formatting rules
 ├── .prettierignore
@@ -159,6 +162,7 @@ It checks:
 - VS Code CLI availability
 - SSH agent state
 - Git SSH signing configuration
+- Optional repair actions with dry-run preview support
 
 Run anytime:
 
@@ -178,6 +182,12 @@ For CI/headless runs:
 ~/.dotfiles/scripts/doctor.sh --fix --non-interactive
 ```
 
+For previewing repair actions without applying changes:
+
+```bash
+~/.dotfiles/scripts/doctor.sh --fix --dry-run --non-interactive
+```
+
 ---
 
 ## 🔁 Installation Layer
@@ -191,6 +201,7 @@ It:
 - Creates symlinks
 - Installs extensions
 - Supports strict extension mode (`--strict-extensions`)
+- Supports dry-run audit mode (`--dry-run`)
 - Optionally configures SSH commit signing
 - Supports deterministic signing key selection (`--signing-key`)
 - Optionally configures Git identity (with CLI override support)
@@ -304,6 +315,16 @@ The same non-interactive behavior is propagated to the post-install doctor run.
 For strict CI semantics, use `--configure-signing=yes` / `--configure-identity=yes`
 to fail fast when required prerequisites are missing.
 
+For an audit run that prints planned actions without modifying your machine:
+
+```bash
+bash ~/.dotfiles/scripts/install.sh \
+  --dry-run \
+  --non-interactive \
+  --configure-signing=no \
+  --configure-identity=no
+```
+
 If you need SSH signing in non-interactive mode and have multiple keys loaded:
 
 ```bash
@@ -320,6 +341,38 @@ After installation, the doctor runs automatically.
 ## 7️⃣ Restart VS Code
 
 Environment restored. Signed commits ready.
+
+---
+
+# ✅ Quality Gates
+
+CI runs the following shell checks on each push/PR:
+
+- `bash -n` for `install.sh`, `doctor.sh`, and `test-install-flags.sh`
+- `shellcheck -x` for shell linting
+- `shfmt -d` for formatting consistency
+- `scripts/test-install-flags.sh` smoke matrix
+- `scripts/doctor.sh --non-interactive` and `--fix --dry-run --non-interactive`
+
+The workflow is defined in `.github/workflows/ci.yml`.
+
+---
+
+# 🏷 Releases and Changelog
+
+Release history is tracked in `CHANGELOG.md`.
+
+Recommended release flow:
+
+1. Update `CHANGELOG.md` under `Unreleased`.
+2. Cut an annotated tag from `main`:
+
+```bash
+git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin v0.1.0
+```
+
+Use semantic version tags (`vMAJOR.MINOR.PATCH`) for consistency.
 
 ---
 
