@@ -48,15 +48,15 @@ It's a foundation — not a rigid framework.
 # 🏗 Architecture
 
 ```text
-~/.dotfiles
+<dotfiles-repo-root>
 ├── scripts/          → Installation orchestration
 │   ├── install.sh    → Bootstrap + environment provisioning
 │   └── doctor.sh     → Environment diagnostics & validation
 ├── shell/            → Modular ZSH configuration
-│   ├── base.zsh      → Core shell behavior
-│   ├── aliases.zsh   → Command shortcuts
-│   ├── paths.zsh     → Homebrew-aware PATH management
-│   └── exports.zsh   → Environment variables & SSH agent preference
+│   ├── 10-base.zsh   → Core shell behavior
+│   ├── 20-exports.zsh → Environment variables & SSH agent preference
+│   ├── 30-paths.zsh  → Homebrew-aware PATH management
+│   └── 40-aliases.zsh → Command shortcuts
 ├── vscode/           → VS Code configuration
 │   ├── settings.json
 │   ├── keybindings.json
@@ -97,7 +97,7 @@ This avoids long-term configuration entropy.
 
 ## 🛣 PATH Management
 
-`paths.zsh` ensures:
+`30-paths.zsh` ensures:
 
 - Homebrew tools are prioritized
 - Works on Apple Silicon and Intel
@@ -143,7 +143,7 @@ if your SSH key is added as a **Signing Key** in GitHub.
 
 GitHub → Settings → SSH and GPG Keys → New signing key
 
-Safe by default. No overwrite without confirmation.
+Safe by default with backups and explicit opt-in for optional Git setup.
 
 ---
 
@@ -173,6 +173,12 @@ Or:
 ~/.dotfiles/scripts/doctor.sh --fix
 ```
 
+For CI/headless runs:
+
+```bash
+~/.dotfiles/scripts/doctor.sh --fix --non-interactive
+```
+
 ---
 
 ## 🔁 Installation Layer
@@ -185,7 +191,11 @@ It:
 - Backs up existing configs
 - Creates symlinks
 - Installs extensions
+- Supports strict extension mode (`--strict-extensions`)
 - Optionally configures SSH commit signing
+- Supports deterministic signing key selection (`--signing-key`)
+- Optionally configures Git identity (with CLI override support)
+- Supports non-interactive automation and CI/headless usage
 - Runs doctor automatically after installation
 - Is safe to re-run
 
@@ -272,6 +282,36 @@ bash ~/.dotfiles/scripts/install.sh
 During installation, you may be asked:
 
 > Do you want to configure SSH commit signing? (y/N)
+
+If Git identity is missing, installer prompt mode can also ask for:
+
+> Do you want to configure Git user.name / user.email? (y/N)
+
+For automated/bootstrap scripts, you can run non-interactively:
+
+```bash
+bash ~/.dotfiles/scripts/install.sh \
+  --non-interactive \
+  --strict-extensions \
+  --configure-signing=no \
+  --configure-identity=yes \
+  --git-name "Your Name" \
+  --git-email "you@example.com"
+```
+
+If stdin is not a TTY (for example in CI/pipelines), installer prompts are automatically disabled.
+
+For strict CI semantics, use `--configure-signing=yes` / `--configure-identity=yes`
+to fail fast when required prerequisites are missing.
+
+If you need SSH signing in non-interactive mode and have multiple keys loaded:
+
+```bash
+bash ~/.dotfiles/scripts/install.sh \
+  --non-interactive \
+  --configure-signing=yes \
+  --signing-key "ssh-ed25519 AAAA...YOUR_PUBLIC_KEY..."
+```
 
 After installation, the doctor runs automatically.
 
