@@ -60,5 +60,6 @@
   "explorer.confirmDelete": false,
   "git.confirmSync": false,
   "git.autofetch": true,
-  "chat.viewSessions.orientation": "stacked"
+  "chat.viewSessions.orientation": "stacked",
+  "workbench.secondarySideBar.defaultVisibility": "hidden"
 }
