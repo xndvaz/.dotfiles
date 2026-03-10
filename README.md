@@ -362,25 +362,6 @@ The workflow is defined in `.github/workflows/ci.yml`.
 
 ---
 
-# 🏷 Releases
-
-Release tracking in this repository is Git-native (annotated tags + commit history).
-
-Recommended release flow:
-
-1. Ensure `main` contains the final release commits.
-2. Cut an annotated tag from `main` and push branch + tag:
-
-```bash
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin main
-git push origin v0.1.0
-```
-
-Use semantic version tags (`vMAJOR.MINOR.PATCH`) and descriptive tag messages.
-
----
-
 # 🧭 Design Principles
 
 This repository favors:
