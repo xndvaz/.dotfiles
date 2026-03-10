@@ -47,25 +47,36 @@ It's a foundation — not a rigid framework.
 
 ```text
 <dotfiles-repo-root>
-├── scripts/          → Installation orchestration
-│   ├── install.sh    → Bootstrap + environment provisioning
-│   ├── doctor.sh     → Environment diagnostics & validation
-│   └── test-install-flags.sh → Installer CLI smoke tests
-├── shell/            → Modular ZSH configuration
-│   ├── 10-base.zsh   → Core shell behavior
-│   ├── 20-exports.zsh → Environment variables & SSH agent preference
-│   ├── 30-paths.zsh  → Homebrew-aware PATH management
-│   └── 40-aliases.zsh → Command shortcuts
-├── vscode/           → VS Code configuration
+├── .ai/
+│   ├── context.md                → Project goals and constraints
+│   ├── conventions.md            → Code and workflow conventions
+│   └── decisions.md              → Technical decision log
+├── .github/
+│   └── workflows/
+│       └── ci.yml                → Shell quality gates
+├── git/
+│   └── commit-template           → Commit message template
+├── scripts/
+│   ├── install.sh                → Bootstrap + environment provisioning
+│   ├── doctor.sh                 → Environment diagnostics & validation
+│   └── test-install-flags.sh     → Installer CLI smoke tests
+├── shell/
+│   ├── 10-base.zsh               → Core shell behavior
+│   ├── 20-exports.zsh            → Environment variables & SSH agent preference
+│   ├── 30-paths.zsh              → Homebrew-aware PATH management
+│   └── 40-aliases.zsh            → Command shortcuts
+├── vscode/
 │   ├── settings.json
 │   ├── keybindings.json
 │   └── extensions.txt
-├── .github/workflows/ci.yml → Shell quality gates
-├── CHANGELOG.md      → Release notes history
-├── .editorconfig     → Cross-tool formatting baseline
-├── .prettierrc       → Explicit formatting rules
+├── AGENTS.md                     → Repository agent operating rules
+├── CHANGELOG.md                  → Release notes history
+├── LICENCE                       → License text
+├── README.md                     → Project overview and onboarding
+├── .editorconfig                 → Cross-tool formatting baseline
+├── .prettierrc                   → Explicit formatting rules
 ├── .prettierignore
-└── zshrc.bootstrap   → Minimal shell loader
+└── zshrc.bootstrap               → Minimal shell loader
 ```
 
 ---
@@ -237,7 +248,7 @@ code --version
 
 ---
 
-## 2️⃣ Install JetBrains Mono
+## 2️⃣ Install JetBrains Mono (Optional)
 
 Download: https://www.jetbrains.com/lp/mono/
 
@@ -261,7 +272,7 @@ brew --version
 
 ---
 
-## 4️⃣ Install Python
+## 4️⃣ Install Python (Recommended)
 
 ```bash
 brew install python
@@ -291,11 +302,17 @@ bash ~/.dotfiles/scripts/install.sh
 
 During installation, you may be asked:
 
-> Do you want to configure SSH commit signing? (y/N)
+> Configure now? (Y/N)
 
 If Git identity is missing, installer prompt mode can also ask for:
 
-> Do you want to configure Git user.name / user.email? (y/N)
+> Configure now? (Y/N)
+
+If your clone is not in `~/.dotfiles`, run the installer from your clone path:
+
+```bash
+bash /absolute/path/to/your/clone/scripts/install.sh
+```
 
 For automated/bootstrap scripts, you can run non-interactively:
 
@@ -338,7 +355,21 @@ After installation, the doctor runs automatically.
 
 ---
 
-## 7️⃣ Restart VS Code
+## 7️⃣ Validate With Doctor
+
+```bash
+bash ~/.dotfiles/scripts/doctor.sh --non-interactive
+```
+
+If your clone is elsewhere:
+
+```bash
+bash /absolute/path/to/your/clone/scripts/doctor.sh --non-interactive
+```
+
+---
+
+## 8️⃣ Restart VS Code
 
 Environment restored. Signed commits ready.
 
