@@ -32,15 +32,18 @@ jobs:
           bash -n scripts/install.sh
           bash -n scripts/doctor.sh
           bash -n scripts/test-install-flags.sh
+          bash -n scripts/test-doctor-flags.sh
 
       - name: ShellCheck
-        run: shellcheck -x scripts/install.sh scripts/doctor.sh scripts/test-install-flags.sh
+        run: shellcheck -x scripts/install.sh scripts/doctor.sh scripts/test-install-flags.sh scripts/test-doctor-flags.sh
 
       - name: shfmt diff check
-        run: shfmt -d scripts/install.sh scripts/doctor.sh scripts/test-install-flags.sh
+        run: shfmt -d scripts/install.sh scripts/doctor.sh scripts/test-install-flags.sh scripts/test-doctor-flags.sh
 
-      - name: install.sh smoke tests
-        run: bash scripts/test-install-flags.sh
+      - name: shell smoke tests
+        run: |
+          bash scripts/test-install-flags.sh
+          bash scripts/test-doctor-flags.sh
 
       - name: doctor non-interactive checks
         run: |
