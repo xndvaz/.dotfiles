@@ -21,12 +21,16 @@ set -euo pipefail
 # With --fix:
 # - repairs deterministic issues
 # - re-runs validation automatically
+#
+# With --dry-run:
+# - prints planned fix actions without applying them
 # =============================================================================
 
 errors=0
 warnings=0
 FIX=0
 NON_INTERACTIVE=0
+DRY_RUN=0
 CODE_CLI_AVAILABLE=0
 FIX_APPLIED=0
 RERUN_AFTER_FIX="${DOCTOR_RERUN_AFTER_FIX:-0}"
@@ -44,13 +48,14 @@ for arg in "$@"; do
   case "$arg" in
     --fix) FIX=1 ;;
     --non-interactive) NON_INTERACTIVE=1 ;;
+    --dry-run) DRY_RUN=1 ;;
     -h|--help)
-      echo "Usage: doctor.sh [--fix] [--non-interactive]"
+      echo "Usage: doctor.sh [--fix] [--non-interactive] [--dry-run]"
       exit 0
       ;;
     *)
       echo "Error: unknown argument: $arg" >&2
-      echo "Usage: doctor.sh [--fix] [--non-interactive]" >&2
+      echo "Usage: doctor.sh [--fix] [--non-interactive] [--dry-run]" >&2
       exit 1
       ;;
   esac
@@ -61,6 +66,10 @@ if [[ "$NON_INTERACTIVE" -eq 0 && ! -t 0 ]]; then
   echo "Notice: stdin is not a TTY. Enabling non-interactive mode."
 fi
 
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "Notice: --dry-run enabled. No fixes will be written."
+fi
+
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
@@ -68,6 +77,7 @@ section() { echo ""; echo "---- $1 ----"; }
 ok() { echo "✔ $1"; }
 warn() { echo "⚠ $1"; warnings=$((warnings + 1)); }
 err() { echo "✖ $1"; errors=$((errors + 1)); }
+dry_note() { echo "[dry-run] $1"; }
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
@@ -121,8 +131,12 @@ backup_if_exists() {
     local ts backup
     ts="$(date +%Y%m%d-%H%M%S)"
     backup="${target}.bak.${ts}"
-    mv "$target" "$backup"
-    echo "  Backed up: $target -> $backup"
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      dry_note "Would back up: $target -> $backup"
+    else
+      mv "$target" "$backup"
+      echo "  Backed up: $target -> $backup"
+    fi
   fi
 }
 
@@ -135,12 +149,16 @@ repair_symlink() {
     return
   fi
 
-  mkdir -p "$(dirname "$target")"
-  backup_if_exists "$target"
-  ln -sfn "$source" "$target"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    dry_note "Would repair symlink: $target -> $source"
+  else
+    mkdir -p "$(dirname "$target")"
+    backup_if_exists "$target"
+    ln -sfn "$source" "$target"
 
-  ok "Repaired symlink: $target -> $source"
-  mark_fix_applied
+    ok "Repaired symlink: $target -> $source"
+    mark_fix_applied
+  fi
 }
 
 check_expected_symlink() {
@@ -215,9 +233,13 @@ check_executable_file() {
   warn "$label not executable: $path"
 
   if [[ "$FIX" -eq 1 && -e "$path" ]]; then
-    chmod +x "$path"
-    ok "Repaired executable bit: $(basename "$path")"
-    mark_fix_applied
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      dry_note "Would set executable bit on: $path"
+    else
+      chmod +x "$path"
+      ok "Repaired executable bit: $(basename "$path")"
+      mark_fix_applied
+    fi
   fi
 }
 
@@ -225,8 +247,12 @@ set_git_global() {
   local key="$1"
   local value="$2"
 
-  git config --global "$key" "$value"
-  mark_fix_applied
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    dry_note "Would configure git --global $key=$value"
+  else
+    git config --global "$key" "$value"
+    mark_fix_applied
+  fi
 }
 
 # -----------------------------------------------------------------------------
@@ -391,7 +417,9 @@ else
   echo "VS Code -> Command Palette -> Install 'code' command in PATH"
 
   if [[ "$FIX" -eq 1 ]]; then
-    if [[ "$NON_INTERACTIVE" -eq 1 ]]; then
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      dry_note "Would open Visual Studio Code for CLI setup guidance"
+    elif [[ "$NON_INTERACTIVE" -eq 1 ]]; then
       ok "Non-interactive mode: skipped automatic VS Code launch"
     elif open -a "Visual Studio Code" >/dev/null 2>&1; then
       ok "Opened Visual Studio Code"
@@ -413,9 +441,13 @@ else
 fi
 
 if [[ "$FIX" -eq 1 && -n "$OP_SSH_SOCK" && "${SSH_AUTH_SOCK:-}" != "$OP_SSH_SOCK" ]]; then
-  export SSH_AUTH_SOCK="$OP_SSH_SOCK"
-  ok "SSH_AUTH_SOCK updated to 1Password agent"
-  mark_fix_applied
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    dry_note "Would set SSH_AUTH_SOCK to 1Password agent socket"
+  else
+    export SSH_AUTH_SOCK="$OP_SSH_SOCK"
+    ok "SSH_AUTH_SOCK updated to 1Password agent"
+    mark_fix_applied
+  fi
 fi
 
 if [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
@@ -437,6 +469,15 @@ if have_cmd ssh-add; then
     ok "SSH agent reachable ($key_count key(s) loaded)"
   elif echo "$ssh_out" | grep -qiE "could not open a connection|error connecting to agent|failed to connect to the agent"; then
     warn "SSH agent not accessible from this shell"
+    if [[ -n "${SSH_AUTH_SOCK:-}" && -S "$SSH_AUTH_SOCK" ]]; then
+      echo "Hint: SSH_AUTH_SOCK points to a valid socket but agent communication failed."
+      echo "Hint: Unlock 1Password and verify SSH Agent is enabled."
+      echo "Hint: Re-run with explicit socket to inspect output:"
+      echo "      SSH_AUTH_SOCK=\"$SSH_AUTH_SOCK\" ssh-add -L"
+    else
+      echo "Hint: SSH_AUTH_SOCK is missing or invalid for this shell."
+      echo "Hint: Run doctor with --fix to align SSH_AUTH_SOCK when 1Password agent is detected."
+    fi
   elif echo "$ssh_out" | grep -qiE "no identities|the agent has no identities"; then
     warn "SSH agent reachable but no keys loaded"
   else
@@ -469,7 +510,11 @@ if have_cmd git; then
 
     if [[ "$FIX" -eq 1 && "$CODE_CLI_AVAILABLE" -eq 1 ]]; then
       set_git_global core.editor "$EXPECTED_GIT_EDITOR"
-      ok "Repaired Git editor"
+      if [[ "$DRY_RUN" -eq 1 ]]; then
+        ok "Planned Git editor repair (dry-run)"
+      else
+        ok "Repaired Git editor"
+      fi
     elif [[ "$FIX" -eq 1 ]]; then
       warn "Skipped Git editor repair because 'code' CLI is unavailable"
     fi
@@ -481,7 +526,11 @@ if have_cmd git; then
     warn "Git commit template not set correctly"
     if [[ "$FIX" -eq 1 ]]; then
       set_git_global commit.template "$EXPECTED_GIT_COMMIT_TEMPLATE"
-      ok "Repaired commit template"
+      if [[ "$DRY_RUN" -eq 1 ]]; then
+        ok "Planned commit template repair (dry-run)"
+      else
+        ok "Repaired commit template"
+      fi
     fi
   else
     ok "Git commit template configured correctly"
@@ -503,6 +552,9 @@ if [[ "$FIX" -eq 1 && "$FIX_APPLIED" -eq 1 && "$RERUN_AFTER_FIX" -eq 0 ]]; then
   rerun_args=()
   if [[ "$NON_INTERACTIVE" -eq 1 ]]; then
     rerun_args+=(--non-interactive)
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    rerun_args+=(--dry-run)
   fi
 
   echo ""

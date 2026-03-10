@@ -71,6 +71,7 @@ set -euo pipefail
 #
 # Automation options:
 #   --non-interactive
+#   --dry-run
 #   --strict-extensions
 #   --configure-signing=<yes|no|prompt>
 #   --configure-identity=<yes|no|prompt>
@@ -87,6 +88,7 @@ REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 NON_INTERACTIVE=0
+DRY_RUN=0
 STRICT_EXTENSIONS=0
 CONFIGURE_SIGNING="prompt"
 CONFIGURE_IDENTITY="prompt"
@@ -100,6 +102,7 @@ Usage: $(basename "$0") [options]
 
 Options:
   --non-interactive                  Disable prompts for optional setup.
+  --dry-run                          Print planned changes without modifying files or git config.
   --strict-extensions                Fail install if extensions cannot be installed.
   --configure-signing=<mode>         Mode for Git SSH signing: yes|no|prompt.
   --configure-identity=<mode>        Mode for Git identity: yes|no|prompt.
@@ -130,6 +133,9 @@ parse_args() {
         ;;
       --non-interactive)
         NON_INTERACTIVE=1
+        ;;
+      --dry-run)
+        DRY_RUN=1
         ;;
       --strict-extensions)
         STRICT_EXTENSIONS=1
@@ -246,8 +252,16 @@ if [[ "$NON_INTERACTIVE" -eq 0 && ! -t 0 ]]; then
   echo "Notice: stdin is not a TTY. Enabling non-interactive mode."
 fi
 
+if [[ "$DRY_RUN" -eq 1 && "$NON_INTERACTIVE" -eq 0 ]]; then
+  NON_INTERACTIVE=1
+  echo "Notice: --dry-run enabled. Forcing non-interactive mode."
+fi
+
 echo "== Dotfiles install starting =="
 echo "Repo root: $REPO_ROOT"
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "Mode: dry-run (no changes will be written)."
+fi
 
 # -----------------------------------------------------------------------------
 # Paths
@@ -279,7 +293,11 @@ if [[ ! -f "$REPO_SETTINGS" ]]; then
   exit 1
 fi
 
-mkdir -p "$VSCODE_USER_DIR"
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "[dry-run] Would ensure directory exists: $VSCODE_USER_DIR"
+else
+  mkdir -p "$VSCODE_USER_DIR"
+fi
 
 # -----------------------------------------------------------------------------
 # Utility: backup existing targets
@@ -290,8 +308,12 @@ backup_if_exists () {
     local ts backup
     ts="$(date +%Y%m%d-%H%M%S)"
     backup="${target}.bak.${ts}"
-    mv "$target" "$backup"
-    echo "Backed up: $target -> $backup"
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      echo "[dry-run] Would back up: $target -> $backup"
+    else
+      mv "$target" "$backup"
+      echo "Backed up: $target -> $backup"
+    fi
   fi
 }
 
@@ -317,8 +339,12 @@ link_file () {
   fi
 
   backup_if_exists "$target"
-  ln -sfn "$source" "$target"
-  echo "Linked: $target -> $source"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would link: $target -> $source"
+  else
+    ln -sfn "$source" "$target"
+    echo "Linked: $target -> $source"
+  fi
 }
 
 have_cmd () { command -v "$1" >/dev/null 2>&1; }
@@ -408,12 +434,16 @@ install_extensions () {
       continue
     fi
 
-    echo "  - $ext"
-    if code --install-extension "$ext" >/dev/null 2>&1; then
-      installed_set["$ext_norm"]=1
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      echo "  - $ext (dry-run: would install)"
     else
-      echo "    (warn) failed to install: $ext" >&2
-      ext_failures=$((ext_failures + 1))
+      echo "  - $ext"
+      if code --install-extension "$ext" >/dev/null 2>&1; then
+        installed_set["$ext_norm"]=1
+      else
+        echo "    (warn) failed to install: $ext" >&2
+        ext_failures=$((ext_failures + 1))
+      fi
     fi
   done < "$list_file"
 
@@ -422,7 +452,11 @@ install_extensions () {
     return 1
   fi
 
-  echo "Extensions install step done."
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "Extensions install step done (dry-run)."
+  else
+    echo "Extensions install step done."
+  fi
 }
 
 # -----------------------------------------------------------------------------
@@ -452,8 +486,12 @@ configure_git_editor () {
     return 0
   fi
 
-  git config --global core.editor "$desired"
-  echo "Configured: core.editor=$desired"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would configure: core.editor=$desired"
+  else
+    git config --global core.editor "$desired"
+    echo "Configured: core.editor=$desired"
+  fi
 }
 
 # -----------------------------------------------------------------------------
@@ -483,8 +521,12 @@ configure_git_commit_template () {
     return 0
   fi
 
-  git config --global commit.template "$desired"
-  echo "Configured: commit.template=$desired"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would configure: commit.template=$desired"
+  else
+    git config --global commit.template "$desired"
+    echo "Configured: commit.template=$desired"
+  fi
 }
 
 # -----------------------------------------------------------------------------
@@ -642,12 +684,19 @@ configure_git_ssh_signing () {
     selected_key="$algo $pub"
   fi
 
-  git config --global gpg.format ssh
-  git config --global commit.gpgsign true
-  git config --global user.signingkey "$selected_key"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would configure SSH signing:"
+    echo "  gpg.format=ssh"
+    echo "  commit.gpgsign=true"
+    echo "  user.signingkey=$selected_key"
+  else
+    git config --global gpg.format ssh
+    git config --global commit.gpgsign true
+    git config --global user.signingkey "$selected_key"
 
-  echo "✅ SSH commit signing configured."
-  echo "Signing key: $(git config --global --get user.signingkey)"
+    echo "✅ SSH commit signing configured."
+    echo "Signing key: $(git config --global --get user.signingkey)"
+  fi
 }
 
 # -----------------------------------------------------------------------------
@@ -697,9 +746,15 @@ configure_git_identity () {
       return 0
     fi
 
-    git config --global user.name "$CLI_GIT_NAME"
-    git config --global user.email "$CLI_GIT_EMAIL"
-    echo "Git identity configured."
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      echo "[dry-run] Would configure Git identity:"
+      echo "  user.name  = $CLI_GIT_NAME"
+      echo "  user.email = $CLI_GIT_EMAIL"
+    else
+      git config --global user.name "$CLI_GIT_NAME"
+      git config --global user.email "$CLI_GIT_EMAIL"
+      echo "Git identity configured."
+    fi
     return 0
   fi
 
@@ -761,10 +816,16 @@ configure_git_identity () {
     return 0
   fi
 
-  git config --global user.name "$new_name"
-  git config --global user.email "$new_email"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would configure Git identity:"
+    echo "  user.name  = $new_name"
+    echo "  user.email = $new_email"
+  else
+    git config --global user.name "$new_name"
+    git config --global user.email "$new_email"
 
-  echo "Git identity configured."
+    echo "Git identity configured."
+  fi
 }
 
 # -----------------------------------------------------------------------------
@@ -778,11 +839,23 @@ ensure_zsh_bootstrap
 link_file "$REPO_SETTINGS" "$VSCODE_SETTINGS"
 
 if [[ ! -f "$REPO_KEYBINDINGS" ]]; then
-  mkdir -p "$REPO_VSCODE_DIR"
-  printf '%s\n' '[]' > "$REPO_KEYBINDINGS"
-  echo "Created: $REPO_KEYBINDINGS"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would create: $REPO_KEYBINDINGS (with empty JSON array)"
+  else
+    mkdir -p "$REPO_VSCODE_DIR"
+    printf '%s\n' '[]' > "$REPO_KEYBINDINGS"
+    echo "Created: $REPO_KEYBINDINGS"
+  fi
 fi
-link_file "$REPO_KEYBINDINGS" "$VSCODE_KEYBINDINGS"
+
+if [[ -f "$REPO_KEYBINDINGS" ]]; then
+  link_file "$REPO_KEYBINDINGS" "$VSCODE_KEYBINDINGS"
+elif [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "[dry-run] Would link: $VSCODE_KEYBINDINGS -> $REPO_KEYBINDINGS"
+else
+  echo "Error: expected file not found: $REPO_KEYBINDINGS" >&2
+  exit 1
+fi
 
 # -----------------------------------------------------------------------------
 # VS Code: extensions
@@ -815,6 +888,9 @@ if [[ -f "$DOCTOR_SCRIPT" ]]; then
 
   if [[ "$NON_INTERACTIVE" -eq 1 ]]; then
     DOCTOR_ARGS+=(--non-interactive)
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    DOCTOR_ARGS+=(--dry-run)
   fi
 
   if [[ -n "${OP_SSH_SOCK:-}" && -S "$OP_SSH_SOCK" ]]; then
