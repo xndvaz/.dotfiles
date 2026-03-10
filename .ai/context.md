@@ -5,7 +5,7 @@ This is a personal dotfiles repository for macOS. It provides a reproducible, mo
 
 ## Main tools used
 - `zsh` with modular files in `shell/`
-- `bash` scripts in `scripts/` (`install.sh`, `doctor.sh`)
+- `bash` scripts in `scripts/` (`install.sh`, `doctor.sh`, smoke tests)
 - VS Code configuration in `vscode/`
 - Git templates/config helpers in `git/`
 - Homebrew as the expected package/bootstrap dependency on macOS

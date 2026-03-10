@@ -26,6 +26,9 @@
 - Keep `install.sh` / `doctor.sh` interactive and non-interactive behaviors explicit and predictable (avoid hidden prompts in non-TTY contexts).
 - Prefer bounded filesystem lookups over recursive scans in startup/doctor paths (for example socket discovery) to avoid hangs on large macOS container directories.
 - Keep shell quality gates aligned between local checks and CI (`bash -n`, `shellcheck`, `shfmt -d`, installer smoke tests, doctor non-interactive run).
+- Keep smoke tests scenario-focused:
+  - `test-install-flags.sh` for installer CLI semantics and dry-run behavior
+  - `test-doctor-flags.sh` for doctor CLI semantics and dry-run behavior
 
 ## Guidelines for adding new files
 - Place files in the most specific existing directory before creating new top-level folders.

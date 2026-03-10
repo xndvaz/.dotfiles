@@ -168,3 +168,22 @@ Use this file to track decisions that affect architecture, workflows, or long-te
   Add heavyweight test framework; rejected as unnecessary for current repository size.
 - Supersedes / Superseded by:
   None.
+
+## DEC-20260310-doctor-smoke-test-coverage
+- Date: 2026-03-10
+- Status: accepted
+- Context:
+  CI covered installer CLI semantics but lacked a dedicated smoke suite for doctor CLI scenarios.
+  This left argument handling and dry-run no-mutation behavior for `doctor.sh` less directly verified.
+- Decision:
+  Add `scripts/test-doctor-flags.sh` and wire it into CI/lint/format checks.
+  Cover key scenarios: help output, unknown argument rejection, non-interactive execution, `--fix --dry-run` execution, and dry-run no-mutation behavior in temporary HOME.
+- Consequences:
+  Improves confidence that doctor CLI contracts remain stable across refactors.
+  Keeps tests lightweight and shell-native without introducing extra dependencies.
+  Requires maintaining one additional smoke script and CI step.
+- Alternatives considered:
+  Rely only on end-to-end doctor invocation in CI; rejected due to weaker CLI contract coverage.
+  Move to a full shell testing framework; rejected as unnecessary for current repository complexity.
+- Supersedes / Superseded by:
+  None.

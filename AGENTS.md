@@ -9,7 +9,7 @@ This repository contains reproducible macOS dotfiles for a development environme
 The goal is explicit, readable, idempotent configuration rather than hidden automation.
 
 ## Repository structure
-- `scripts/`: setup, validation, and smoke-test scripts (`install.sh`, `doctor.sh`, `test-install-flags.sh`)
+- `scripts/`: setup, validation, and smoke-test scripts (`install.sh`, `doctor.sh`, `test-install-flags.sh`, `test-doctor-flags.sh`)
 - `shell/`: ordered Zsh modules (`10-base.zsh`, `20-exports.zsh`, etc.)
 - `vscode/`: editor settings, keybindings, and extensions list
 - `git/`: Git-related templates (for example commit template)
@@ -22,6 +22,7 @@ The goal is explicit, readable, idempotent configuration rather than hidden auto
 - `scripts/install.sh --dry-run` must not mutate user files or global git configuration.
 - `scripts/doctor.sh` must remain safe for headless execution (`--non-interactive`, non-TTY auto-detect, no forced GUI launch).
 - `scripts/doctor.sh --dry-run` must not apply filesystem/git/environment fixes.
+- `scripts/test-install-flags.sh` and `scripts/test-doctor-flags.sh` should remain fast smoke suites safe for CI runners.
 - 1Password SSH agent socket detection in shell/scripts must avoid recursive scans under `~/Library/Group Containers`; use bounded glob/compgen lookups.
 - CI shell quality checks are defined in `.github/workflows/ci.yml` and must stay aligned with local script behavior.
 
@@ -42,4 +43,4 @@ Before changing code or configuration, agents must analyze the repository:
 2. Check existing conventions and decision history in `.ai/`.
 3. Make minimal, scoped changes that preserve reproducibility and idempotency.
 4. Update `.ai/decisions.md` when introducing a significant technical decision.
-5. Run quick validation checks for touched scripts (for example `bash -n`, `scripts/test-install-flags.sh`, and relevant `--help`/non-interactive flows).
+5. Run quick validation checks for touched scripts (for example `bash -n`, `scripts/test-install-flags.sh`, `scripts/test-doctor-flags.sh`, and relevant `--help`/non-interactive flows).
