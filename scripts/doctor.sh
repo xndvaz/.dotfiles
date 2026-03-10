@@ -46,18 +46,18 @@ DOTFILES_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 # -----------------------------------------------------------------------------
 for arg in "$@"; do
   case "$arg" in
-    --fix) FIX=1 ;;
-    --non-interactive) NON_INTERACTIVE=1 ;;
-    --dry-run) DRY_RUN=1 ;;
-    -h|--help)
-      echo "Usage: doctor.sh [--fix] [--non-interactive] [--dry-run]"
-      exit 0
-      ;;
-    *)
-      echo "Error: unknown argument: $arg" >&2
-      echo "Usage: doctor.sh [--fix] [--non-interactive] [--dry-run]" >&2
-      exit 1
-      ;;
+  --fix) FIX=1 ;;
+  --non-interactive) NON_INTERACTIVE=1 ;;
+  --dry-run) DRY_RUN=1 ;;
+  -h | --help)
+    echo "Usage: doctor.sh [--fix] [--non-interactive] [--dry-run]"
+    exit 0
+    ;;
+  *)
+    echo "Error: unknown argument: $arg" >&2
+    echo "Usage: doctor.sh [--fix] [--non-interactive] [--dry-run]" >&2
+    exit 1
+    ;;
   esac
 done
 
@@ -73,10 +73,19 @@ fi
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
-section() { echo ""; echo "---- $1 ----"; }
+section() {
+  echo ""
+  echo "---- $1 ----"
+}
 ok() { echo "✔ $1"; }
-warn() { echo "⚠ $1"; warnings=$((warnings + 1)); }
-err() { echo "✖ $1"; errors=$((errors + 1)); }
+warn() {
+  echo "⚠ $1"
+  warnings=$((warnings + 1))
+}
+err() {
+  echo "✖ $1"
+  errors=$((errors + 1))
+}
 dry_note() { echo "[dry-run] $1"; }
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
@@ -107,7 +116,7 @@ path_index_of() {
   local idx=1
   local entry
   local -a path_entries
-  IFS=':' read -r -a path_entries <<< "$PATH"
+  IFS=':' read -r -a path_entries <<<"$PATH"
 
   for entry in "${path_entries[@]}"; do
     if [[ "$entry" == "$needle" ]]; then
@@ -314,7 +323,7 @@ fi
 
 section "Dotfiles links"
 for spec in "${SYMLINK_SPECS[@]}"; do
-  IFS='|' read -r label source target <<< "$spec"
+  IFS='|' read -r label source target <<<"$spec"
   check_expected_symlink "$label" "$source" "$target"
 done
 
@@ -371,7 +380,7 @@ if have_cmd brew; then
   if [[ "$brew_bin_pos" -gt 0 ]]; then
     brew_best_pos="$brew_bin_pos"
   fi
-  if [[ "$brew_sbin_pos" -gt 0 && ( "$brew_best_pos" -eq 0 || "$brew_sbin_pos" -lt "$brew_best_pos" ) ]]; then
+  if [[ "$brew_sbin_pos" -gt 0 && ("$brew_best_pos" -eq 0 || "$brew_sbin_pos" -lt "$brew_best_pos") ]]; then
     brew_best_pos="$brew_sbin_pos"
   fi
 
@@ -379,7 +388,7 @@ if have_cmd brew; then
   if [[ "$sys_usrbin_pos" -gt 0 ]]; then
     sys_best_pos="$sys_usrbin_pos"
   fi
-  if [[ "$sys_bin_pos" -gt 0 && ( "$sys_best_pos" -eq 0 || "$sys_bin_pos" -lt "$sys_best_pos" ) ]]; then
+  if [[ "$sys_bin_pos" -gt 0 && ("$sys_best_pos" -eq 0 || "$sys_bin_pos" -lt "$sys_best_pos") ]]; then
     sys_best_pos="$sys_bin_pos"
   fi
 

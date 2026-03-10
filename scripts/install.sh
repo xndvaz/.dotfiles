@@ -115,10 +115,10 @@ EOF
 
 normalize_mode() {
   case "$1" in
-    yes|no|prompt) echo "$1" ;;
-    y|Y|true|TRUE|1) echo "yes" ;;
-    n|N|false|FALSE|0) echo "no" ;;
-    *) return 1 ;;
+  yes | no | prompt) echo "$1" ;;
+  y | Y | true | TRUE | 1) echo "yes" ;;
+  n | N | false | FALSE | 0) echo "no" ;;
+  *) return 1 ;;
   esac
 }
 
@@ -127,97 +127,97 @@ parse_args() {
 
   while [[ "$#" -gt 0 ]]; do
     case "$1" in
-      -h|--help)
-        print_usage
-        exit 0
-        ;;
-      --non-interactive)
-        NON_INTERACTIVE=1
-        ;;
-      --dry-run)
-        DRY_RUN=1
-        ;;
-      --strict-extensions)
-        STRICT_EXTENSIONS=1
-        ;;
-      --configure-signing=*)
-        mode="${1#*=}"
-        if ! mode="$(normalize_mode "$mode")"; then
-          echo "Error: invalid value for --configure-signing: ${1#*=}" >&2
-          exit 1
-        fi
-        CONFIGURE_SIGNING="$mode"
-        ;;
-      --configure-signing)
-        shift
-        if [[ "$#" -eq 0 ]]; then
-          echo "Error: --configure-signing requires a value" >&2
-          exit 1
-        fi
-        if ! mode="$(normalize_mode "$1")"; then
-          echo "Error: invalid value for --configure-signing: $1" >&2
-          exit 1
-        fi
-        CONFIGURE_SIGNING="$mode"
-        ;;
-      --configure-identity=*)
-        mode="${1#*=}"
-        if ! mode="$(normalize_mode "$mode")"; then
-          echo "Error: invalid value for --configure-identity: ${1#*=}" >&2
-          exit 1
-        fi
-        CONFIGURE_IDENTITY="$mode"
-        ;;
-      --configure-identity)
-        shift
-        if [[ "$#" -eq 0 ]]; then
-          echo "Error: --configure-identity requires a value" >&2
-          exit 1
-        fi
-        if ! mode="$(normalize_mode "$1")"; then
-          echo "Error: invalid value for --configure-identity: $1" >&2
-          exit 1
-        fi
-        CONFIGURE_IDENTITY="$mode"
-        ;;
-      --signing-key=*)
-        CLI_SIGNING_KEY="${1#*=}"
-        ;;
-      --signing-key)
-        shift
-        if [[ "$#" -eq 0 ]]; then
-          echo "Error: --signing-key requires a value" >&2
-          exit 1
-        fi
-        CLI_SIGNING_KEY="$1"
-        ;;
-      --git-name=*)
-        CLI_GIT_NAME="${1#*=}"
-        ;;
-      --git-name)
-        shift
-        if [[ "$#" -eq 0 ]]; then
-          echo "Error: --git-name requires a value" >&2
-          exit 1
-        fi
-        CLI_GIT_NAME="$1"
-        ;;
-      --git-email=*)
-        CLI_GIT_EMAIL="${1#*=}"
-        ;;
-      --git-email)
-        shift
-        if [[ "$#" -eq 0 ]]; then
-          echo "Error: --git-email requires a value" >&2
-          exit 1
-        fi
-        CLI_GIT_EMAIL="$1"
-        ;;
-      *)
-        echo "Error: unknown argument: $1" >&2
-        print_usage >&2
+    -h | --help)
+      print_usage
+      exit 0
+      ;;
+    --non-interactive)
+      NON_INTERACTIVE=1
+      ;;
+    --dry-run)
+      DRY_RUN=1
+      ;;
+    --strict-extensions)
+      STRICT_EXTENSIONS=1
+      ;;
+    --configure-signing=*)
+      mode="${1#*=}"
+      if ! mode="$(normalize_mode "$mode")"; then
+        echo "Error: invalid value for --configure-signing: ${1#*=}" >&2
         exit 1
-        ;;
+      fi
+      CONFIGURE_SIGNING="$mode"
+      ;;
+    --configure-signing)
+      shift
+      if [[ "$#" -eq 0 ]]; then
+        echo "Error: --configure-signing requires a value" >&2
+        exit 1
+      fi
+      if ! mode="$(normalize_mode "$1")"; then
+        echo "Error: invalid value for --configure-signing: $1" >&2
+        exit 1
+      fi
+      CONFIGURE_SIGNING="$mode"
+      ;;
+    --configure-identity=*)
+      mode="${1#*=}"
+      if ! mode="$(normalize_mode "$mode")"; then
+        echo "Error: invalid value for --configure-identity: ${1#*=}" >&2
+        exit 1
+      fi
+      CONFIGURE_IDENTITY="$mode"
+      ;;
+    --configure-identity)
+      shift
+      if [[ "$#" -eq 0 ]]; then
+        echo "Error: --configure-identity requires a value" >&2
+        exit 1
+      fi
+      if ! mode="$(normalize_mode "$1")"; then
+        echo "Error: invalid value for --configure-identity: $1" >&2
+        exit 1
+      fi
+      CONFIGURE_IDENTITY="$mode"
+      ;;
+    --signing-key=*)
+      CLI_SIGNING_KEY="${1#*=}"
+      ;;
+    --signing-key)
+      shift
+      if [[ "$#" -eq 0 ]]; then
+        echo "Error: --signing-key requires a value" >&2
+        exit 1
+      fi
+      CLI_SIGNING_KEY="$1"
+      ;;
+    --git-name=*)
+      CLI_GIT_NAME="${1#*=}"
+      ;;
+    --git-name)
+      shift
+      if [[ "$#" -eq 0 ]]; then
+        echo "Error: --git-name requires a value" >&2
+        exit 1
+      fi
+      CLI_GIT_NAME="$1"
+      ;;
+    --git-email=*)
+      CLI_GIT_EMAIL="${1#*=}"
+      ;;
+    --git-email)
+      shift
+      if [[ "$#" -eq 0 ]]; then
+        echo "Error: --git-email requires a value" >&2
+        exit 1
+      fi
+      CLI_GIT_EMAIL="$1"
+      ;;
+    *)
+      echo "Error: unknown argument: $1" >&2
+      print_usage >&2
+      exit 1
+      ;;
     esac
     shift
   done
@@ -226,13 +226,13 @@ parse_args() {
 parse_args "$@"
 
 if [[ -n "$CLI_SIGNING_KEY" ]]; then
-  read -r key_algo key_pub key_rest <<< "$CLI_SIGNING_KEY"
+  read -r key_algo key_pub _ <<<"$CLI_SIGNING_KEY"
   if [[ -z "${key_algo:-}" || -z "${key_pub:-}" ]]; then
     echo "Error: invalid --signing-key format. Expected: '<algo> <pubkey>'" >&2
     exit 1
   fi
   CLI_SIGNING_KEY="$key_algo $key_pub"
-  unset key_algo key_pub key_rest
+  unset key_algo key_pub _
 
   if [[ "$CONFIGURE_SIGNING" == "no" ]]; then
     echo "Error: --signing-key cannot be used with --configure-signing=no" >&2
@@ -242,7 +242,7 @@ if [[ -n "$CLI_SIGNING_KEY" ]]; then
   CONFIGURE_SIGNING="yes"
 fi
 
-if [[ "$CONFIGURE_IDENTITY" == "no" && ( -n "$CLI_GIT_NAME" || -n "$CLI_GIT_EMAIL" ) ]]; then
+if [[ "$CONFIGURE_IDENTITY" == "no" && (-n "$CLI_GIT_NAME" || -n "$CLI_GIT_EMAIL") ]]; then
   echo "Error: --git-name/--git-email cannot be used with --configure-identity=no" >&2
   exit 1
 fi
@@ -302,7 +302,7 @@ fi
 # -----------------------------------------------------------------------------
 # Utility: backup existing targets
 # -----------------------------------------------------------------------------
-backup_if_exists () {
+backup_if_exists() {
   local target="$1"
   if [[ -e "$target" || -L "$target" ]]; then
     local ts backup
@@ -320,7 +320,7 @@ backup_if_exists () {
 # -----------------------------------------------------------------------------
 # Utility: create symlink safely (idempotent)
 # -----------------------------------------------------------------------------
-link_file () {
+link_file() {
   local source="$1"
   local target="$2"
 
@@ -347,12 +347,12 @@ link_file () {
   fi
 }
 
-have_cmd () { command -v "$1" >/dev/null 2>&1; }
+have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
 # -----------------------------------------------------------------------------
 # Utility: detect 1Password SSH agent socket without recursive filesystem scan
 # -----------------------------------------------------------------------------
-detect_1password_agent_socket () {
+detect_1password_agent_socket() {
   local pattern="$HOME/Library/Group Containers/*.com.1password*/t/agent.sock"
   local -a socket_candidates=()
   local socket_path
@@ -372,7 +372,7 @@ detect_1password_agent_socket () {
 # -----------------------------------------------------------------------------
 # Zsh: bootstrap ~/.zshrc from repo
 # -----------------------------------------------------------------------------
-ensure_zsh_bootstrap () {
+ensure_zsh_bootstrap() {
   local user_zshrc="$HOME/.zshrc"
 
   if [[ ! -f "$REPO_ZSH_BOOTSTRAP" ]]; then
@@ -386,7 +386,7 @@ ensure_zsh_bootstrap () {
 # -----------------------------------------------------------------------------
 # VS Code: install extensions listed in a file
 # -----------------------------------------------------------------------------
-install_extensions () {
+install_extensions() {
   local list_file="$1"
   local installed_ext
   local installed_ext_norm
@@ -445,7 +445,7 @@ install_extensions () {
         ext_failures=$((ext_failures + 1))
       fi
     fi
-  done < "$list_file"
+  done <"$list_file"
 
   if [[ "$ext_failures" -gt 0 && "$STRICT_EXTENSIONS" -eq 1 ]]; then
     echo "Error: failed to install $ext_failures extension(s) with --strict-extensions enabled." >&2
@@ -462,7 +462,7 @@ install_extensions () {
 # -----------------------------------------------------------------------------
 # Git: editor for interactive operations
 # -----------------------------------------------------------------------------
-configure_git_editor () {
+configure_git_editor() {
   echo ""
   echo "== Git editor =="
 
@@ -497,7 +497,7 @@ configure_git_editor () {
 # -----------------------------------------------------------------------------
 # Git: commit template from repo
 # -----------------------------------------------------------------------------
-configure_git_commit_template () {
+configure_git_commit_template() {
   echo ""
   echo "== Git commit template =="
 
@@ -532,7 +532,7 @@ configure_git_commit_template () {
 # -----------------------------------------------------------------------------
 # Optional: Git SSH commit signing
 # -----------------------------------------------------------------------------
-configure_git_ssh_signing () {
+configure_git_ssh_signing() {
   echo ""
   echo "== Optional: Git SSH commit signing =="
 
@@ -654,7 +654,7 @@ configure_git_ssh_signing () {
       else
         display="$algo $pub"
       fi
-      printf "  [%d] %s\n" "$((i+1))" "$display"
+      printf "  [%d] %s\n" "$((i + 1))" "$display"
     done
 
     echo ""
@@ -669,7 +669,7 @@ configure_git_ssh_signing () {
       return 0
     fi
 
-    if ! [[ "${CHOICE}" =~ ^[0-9]+$ ]] || (( CHOICE < 1 || CHOICE > ${#KEY_LINES[@]} )); then
+    if ! [[ "${CHOICE}" =~ ^[0-9]+$ ]] || ((CHOICE < 1 || CHOICE > ${#KEY_LINES[@]})); then
       echo "Notice: invalid selection. Skipping signing setup."
       if [[ "$signing_required" -eq 1 ]]; then
         echo "Error: signing was explicitly required but key selection was invalid." >&2
@@ -678,7 +678,7 @@ configure_git_ssh_signing () {
       return 0
     fi
 
-    line="${KEY_LINES[$((CHOICE-1))]}"
+    line="${KEY_LINES[$((CHOICE - 1))]}"
     algo="$(echo "$line" | awk '{print $1}')"
     pub="$(echo "$line" | awk '{print $2}')"
     selected_key="$algo $pub"
@@ -702,7 +702,7 @@ configure_git_ssh_signing () {
 # -----------------------------------------------------------------------------
 # Optional: Git user identity (user.name, user.email)
 # -----------------------------------------------------------------------------
-configure_git_identity () {
+configure_git_identity() {
   echo ""
   echo "== Optional: Git user identity =="
 
@@ -843,7 +843,7 @@ if [[ ! -f "$REPO_KEYBINDINGS" ]]; then
     echo "[dry-run] Would create: $REPO_KEYBINDINGS (with empty JSON array)"
   else
     mkdir -p "$REPO_VSCODE_DIR"
-    printf '%s\n' '[]' > "$REPO_KEYBINDINGS"
+    printf '%s\n' '[]' >"$REPO_KEYBINDINGS"
     echo "Created: $REPO_KEYBINDINGS"
   fi
 fi
