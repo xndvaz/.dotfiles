@@ -131,3 +131,40 @@ Use this file to track decisions that affect architecture, workflows, or long-te
   Skip doctor from installer when non-interactive; rejected because it removes useful validation in automation.
 - Supersedes / Superseded by:
   None.
+
+## DEC-20260310-dry-run-modes-for-install-and-doctor
+- Date: 2026-03-10
+- Status: accepted
+- Context:
+  There was no safe preview path for script behavior, which made auditing harder in new machines and CI rehearsals.
+- Decision:
+  Add `--dry-run` mode to `install.sh` and `doctor.sh`.
+  In dry-run mode, scripts print planned changes but do not modify files, global Git config, or environment/session sockets.
+  Installer dry-run also propagates dry-run mode to post-install doctor execution.
+- Consequences:
+  Enables deterministic audits before applying changes.
+  Improves confidence for headless automation and first-time bootstrap checks.
+  Adds additional branches in fix/write paths that must remain tested.
+- Alternatives considered:
+  Document expected behavior without execution; rejected because it still requires manual command tracing.
+  Add a separate audit script; rejected to avoid duplicated logic.
+- Supersedes / Superseded by:
+  None.
+
+## DEC-20260310-shell-quality-gates-and-release-changelog
+- Date: 2026-03-10
+- Status: accepted
+- Context:
+  Repository quality checks were manual and release history did not have a structured changelog/tag workflow.
+- Decision:
+  Add a GitHub Actions CI workflow with shell quality gates: `bash -n`, `shellcheck`, `shfmt -d`, installer smoke tests, and doctor non-interactive checks.
+  Add `CHANGELOG.md` and define release hygiene around changelog-first updates with annotated Git tags.
+- Consequences:
+  Catches shell regressions earlier and keeps automation behavior measurable.
+  Improves release traceability for users consuming the dotfiles over time.
+  Slightly increases maintenance work to keep tests and changelog current.
+- Alternatives considered:
+  Keep ad hoc local validation only; rejected due to lower reliability.
+  Add heavyweight test framework; rejected as unnecessary for current repository size.
+- Supersedes / Superseded by:
+  None.

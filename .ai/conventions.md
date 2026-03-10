@@ -25,6 +25,7 @@
 - Keep bootstrap and doctor scripts location-independent and safe to rerun.
 - Keep `install.sh` / `doctor.sh` interactive and non-interactive behaviors explicit and predictable (avoid hidden prompts in non-TTY contexts).
 - Prefer bounded filesystem lookups over recursive scans in startup/doctor paths (for example socket discovery) to avoid hangs on large macOS container directories.
+- Keep shell quality gates aligned between local checks and CI (`bash -n`, `shellcheck`, `shfmt -d`, installer smoke tests, doctor non-interactive run).
 
 ## Guidelines for adding new files
 - Place files in the most specific existing directory before creating new top-level folders.
@@ -32,4 +33,5 @@
 - Add brief header comments only when behavior is non-obvious.
 - When introducing a new pattern or architectural change, record it in `.ai/decisions.md`.
 - Update `README.md` when a new file changes user-facing setup behavior.
-- When changing installer/doctor CLI semantics, update all three in the same change: script `--help`, `README.md`, and `.ai/decisions.md`.
+- When changing installer/doctor CLI semantics, update all of the following in the same change: script `--help`, `README.md`, smoke tests, and `.ai/decisions.md`.
+- When preparing a release, update `CHANGELOG.md` first and then create an annotated Git tag from `main`.
