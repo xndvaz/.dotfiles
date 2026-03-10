@@ -55,6 +55,7 @@ It's a foundation — not a rigid framework.
 | `scripts/install.sh` | Bootstrap and environment provisioning |
 | `scripts/doctor.sh` | Environment diagnostics and validation |
 | `scripts/test-install-flags.sh` | Installer CLI smoke tests |
+| `scripts/test-doctor-flags.sh` | Doctor CLI smoke tests |
 | `shell/10-base.zsh` | Core shell behavior |
 | `shell/20-exports.zsh` | Environment variables and SSH agent preference |
 | `shell/30-paths.zsh` | Homebrew-aware PATH management |
@@ -284,7 +285,7 @@ python3 --version
 ## 5️⃣ Clone This Repository
 
 ```bash
-DOTFILES_DIR="$HOME/.dotfiles"
+export DOTFILES_DIR="$HOME/.dotfiles"
 git clone https://github.com/xndvaz/.dotfiles.git "$DOTFILES_DIR"
 ```
 
@@ -365,10 +366,10 @@ Environment restored. Signed commits ready.
 
 CI runs the following shell checks on each push/PR:
 
-- `bash -n` for `install.sh`, `doctor.sh`, and `test-install-flags.sh`
+- `bash -n` for `install.sh`, `doctor.sh`, `test-install-flags.sh`, and `test-doctor-flags.sh`
 - `shellcheck -x` for shell linting
 - `shfmt -d` for formatting consistency
-- `scripts/test-install-flags.sh` smoke matrix
+- `scripts/test-install-flags.sh` and `scripts/test-doctor-flags.sh` smoke matrices
 - `scripts/doctor.sh --non-interactive` and `--fix --dry-run --non-interactive`
 
 The workflow is defined in `.github/workflows/ci.yml`.
