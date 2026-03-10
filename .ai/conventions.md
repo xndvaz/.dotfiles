@@ -24,6 +24,7 @@
 - Preserve deterministic shell load order via numeric prefixes in `shell/`.
 - Keep bootstrap and doctor scripts location-independent and safe to rerun.
 - Keep `install.sh` / `doctor.sh` interactive and non-interactive behaviors explicit and predictable (avoid hidden prompts in non-TTY contexts).
+- Prefer bounded filesystem lookups over recursive scans in startup/doctor paths (for example socket discovery) to avoid hangs on large macOS container directories.
 
 ## Guidelines for adding new files
 - Place files in the most specific existing directory before creating new top-level folders.

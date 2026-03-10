@@ -111,3 +111,23 @@ Use this file to track decisions that affect architecture, workflows, or long-te
   Keep GUI open attempts in all `--fix` runs; rejected due to headless automation risk.
 - Supersedes / Superseded by:
   None.
+
+## DEC-20260310-bounded-agent-socket-detection
+- Date: 2026-03-10
+- Status: accepted
+- Context:
+  Recursive socket discovery with `find "$HOME/Library/Group Containers"` proved slow or blocking on some systems, which could stall `install.sh` and `doctor.sh`.
+  Also, installer `--non-interactive` mode was not explicitly propagated to post-install doctor invocation in TTY sessions.
+- Decision:
+  Replace recursive `find`-based 1Password SSH agent socket discovery with bounded glob/`compgen` lookup in both scripts.
+  Propagate installer non-interactive mode to the post-install doctor run, including the `--fix` path.
+  Preserve non-interactive mode during doctor revalidation after applied fixes.
+- Consequences:
+  Removes a class of hangs from large/slow macOS Group Containers trees.
+  Keeps post-install behavior consistent with caller intent for automation and headless safety.
+  Adds small helper functions and argument-array plumbing in scripts.
+- Alternatives considered:
+  Keep recursive `find`; rejected due to observed blocking behavior.
+  Skip doctor from installer when non-interactive; rejected because it removes useful validation in automation.
+- Supersedes / Superseded by:
+  None.
