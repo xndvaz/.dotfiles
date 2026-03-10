@@ -2,7 +2,7 @@
 # ZSH bootstrap loader
 # ------------------------------------------------------------
 # Minimal loader that sources all modular shell configuration
-# files from ~/.dotfiles/shell.
+# files from the repo-local `shell/` directory.
 #
 # Modules are loaded alphabetically.
 # Numeric prefixes enforce deterministic order:
@@ -18,7 +18,10 @@
 [[ -n "${DOTFILES_BOOTSTRAPPED:-}" ]] && return
 DOTFILES_BOOTSTRAPPED=1
 
-DOTFILES_SHELL_DIR="$HOME/.dotfiles/shell"
+# Resolve paths relative to this bootstrap file to keep setup location-independent.
+DOTFILES_BOOTSTRAP_FILE="${${(%):-%N}:A}"
+DOTFILES_ROOT="${DOTFILES_BOOTSTRAP_FILE:h}"
+DOTFILES_SHELL_DIR="$DOTFILES_ROOT/shell"
 
 if [[ -d "$DOTFILES_SHELL_DIR" ]]; then
   local file
