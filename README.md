@@ -310,13 +310,7 @@ If you cloned to a different directory, set `DOTFILES_DIR` accordingly before ru
 For automated/bootstrap scripts, you can run non-interactively:
 
 ```bash
-bash "$DOTFILES_DIR/scripts/install.sh" \
-  --non-interactive \
-  --strict-extensions \
-  --configure-signing=no \
-  --configure-identity=yes \
-  --git-name "Your Name" \
-  --git-email "you@example.com"
+bash "$DOTFILES_DIR/scripts/install.sh" --non-interactive --strict-extensions --configure-signing=no --configure-identity=yes --git-name "Your Name" --git-email "you@example.com"
 ```
 
 If stdin is not a TTY (for example in CI/pipelines), installer prompts are automatically disabled.
@@ -328,20 +322,13 @@ to fail fast when required prerequisites are missing.
 For an audit run that prints planned actions without modifying your machine:
 
 ```bash
-bash "$DOTFILES_DIR/scripts/install.sh" \
-  --dry-run \
-  --non-interactive \
-  --configure-signing=no \
-  --configure-identity=no
+bash "$DOTFILES_DIR/scripts/install.sh" --dry-run --non-interactive --configure-signing=no --configure-identity=no
 ```
 
 If you need SSH signing in non-interactive mode and have multiple keys loaded:
 
 ```bash
-bash "$DOTFILES_DIR/scripts/install.sh" \
-  --non-interactive \
-  --configure-signing=yes \
-  --signing-key "ssh-ed25519 AAAA...YOUR_PUBLIC_KEY..."
+bash "$DOTFILES_DIR/scripts/install.sh" --non-interactive --configure-signing=yes --signing-key "ssh-ed25519 AAAA...YOUR_PUBLIC_KEY..."
 ```
 
 After installation, the doctor runs automatically.
