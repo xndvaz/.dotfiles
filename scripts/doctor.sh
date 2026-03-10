@@ -26,6 +26,7 @@ set -euo pipefail
 errors=0
 warnings=0
 FIX=0
+NON_INTERACTIVE=0
 CODE_CLI_AVAILABLE=0
 FIX_APPLIED=0
 RERUN_AFTER_FIX="${DOCTOR_RERUN_AFTER_FIX:-0}"
@@ -42,12 +43,23 @@ DOTFILES_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 for arg in "$@"; do
   case "$arg" in
     --fix) FIX=1 ;;
+    --non-interactive) NON_INTERACTIVE=1 ;;
     -h|--help)
-      echo "Usage: doctor.sh [--fix]"
+      echo "Usage: doctor.sh [--fix] [--non-interactive]"
       exit 0
+      ;;
+    *)
+      echo "Error: unknown argument: $arg" >&2
+      echo "Usage: doctor.sh [--fix] [--non-interactive]" >&2
+      exit 1
       ;;
   esac
 done
+
+if [[ "$NON_INTERACTIVE" -eq 0 && ! -t 0 ]]; then
+  NON_INTERACTIVE=1
+  echo "Notice: stdin is not a TTY. Enabling non-interactive mode."
+fi
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -61,6 +73,24 @@ have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
 kv() {
   printf "%s: %s\n" "$1" "${2:-<unset>}"
+}
+
+path_index_of() {
+  local needle="$1"
+  local idx=1
+  local entry
+  local -a path_entries
+  IFS=':' read -r -a path_entries <<< "$PATH"
+
+  for entry in "${path_entries[@]}"; do
+    if [[ "$entry" == "$needle" ]]; then
+      echo "$idx"
+      return 0
+    fi
+    idx=$((idx + 1))
+  done
+
+  echo 0
 }
 
 mark_fix_applied() {
@@ -277,11 +307,53 @@ else
 fi
 
 if have_cmd brew; then
-  if [[ "$PATH" == /opt/homebrew/bin* || "$PATH" == /usr/local/bin* ]]; then
-    ok "Homebrew appears early in PATH"
-  else
-    warn "Homebrew not early in PATH"
+  brew_bin_dir="$(dirname "$(command -v brew)")"
+  brew_prefix="$(brew --prefix 2>/dev/null || true)"
+  brew_sbin_dir=""
+
+  if [[ -n "$brew_prefix" ]]; then
+    brew_sbin_dir="$brew_prefix/sbin"
   fi
+
+  brew_bin_pos="$(path_index_of "$brew_bin_dir")"
+  brew_sbin_pos=0
+  if [[ -n "$brew_sbin_dir" ]]; then
+    brew_sbin_pos="$(path_index_of "$brew_sbin_dir")"
+  fi
+
+  sys_usrbin_pos="$(path_index_of "/usr/bin")"
+  sys_bin_pos="$(path_index_of "/bin")"
+
+  brew_best_pos=0
+  if [[ "$brew_bin_pos" -gt 0 ]]; then
+    brew_best_pos="$brew_bin_pos"
+  fi
+  if [[ "$brew_sbin_pos" -gt 0 && ( "$brew_best_pos" -eq 0 || "$brew_sbin_pos" -lt "$brew_best_pos" ) ]]; then
+    brew_best_pos="$brew_sbin_pos"
+  fi
+
+  sys_best_pos=0
+  if [[ "$sys_usrbin_pos" -gt 0 ]]; then
+    sys_best_pos="$sys_usrbin_pos"
+  fi
+  if [[ "$sys_bin_pos" -gt 0 && ( "$sys_best_pos" -eq 0 || "$sys_bin_pos" -lt "$sys_best_pos" ) ]]; then
+    sys_best_pos="$sys_bin_pos"
+  fi
+
+  if [[ "$brew_best_pos" -eq 0 ]]; then
+    warn "Homebrew directories not found in PATH"
+  elif [[ "$sys_best_pos" -eq 0 || "$brew_best_pos" -lt "$sys_best_pos" ]]; then
+    ok "Homebrew precedes system directories in PATH"
+  else
+    warn "Homebrew comes after system directories in PATH"
+  fi
+
+  kv "brew bin path index" "$brew_bin_pos"
+  if [[ -n "$brew_sbin_dir" ]]; then
+    kv "brew sbin path index" "$brew_sbin_pos"
+  fi
+  kv "/usr/bin path index" "$sys_usrbin_pos"
+  kv "/bin path index" "$sys_bin_pos"
 fi
 
 section "Python"
@@ -302,7 +374,9 @@ else
   echo "VS Code -> Command Palette -> Install 'code' command in PATH"
 
   if [[ "$FIX" -eq 1 ]]; then
-    if open -a "Visual Studio Code" >/dev/null 2>&1; then
+    if [[ "$NON_INTERACTIVE" -eq 1 ]]; then
+      ok "Non-interactive mode: skipped automatic VS Code launch"
+    elif open -a "Visual Studio Code" >/dev/null 2>&1; then
       ok "Opened Visual Studio Code"
     else
       warn "Could not open VS Code automatically"
@@ -330,13 +404,22 @@ if [[ "$FIX" -eq 1 && -n "$OP_SSH_SOCK" && "${SSH_AUTH_SOCK:-}" != "$OP_SSH_SOCK
   mark_fix_applied
 fi
 
-kv "SSH_AUTH_SOCK" "${SSH_AUTH_SOCK:-}"
+if [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
+  if [[ -S "$SSH_AUTH_SOCK" ]]; then
+    kv "SSH_AUTH_SOCK" "$SSH_AUTH_SOCK"
+  else
+    warn "SSH_AUTH_SOCK is set but not a valid socket (stale/invalid)"
+    kv "SSH_AUTH_SOCK" "$SSH_AUTH_SOCK"
+  fi
+else
+  kv "SSH_AUTH_SOCK" "<unset>"
+fi
 
 if have_cmd ssh-add; then
   ssh_out="$(ssh-add -L 2>&1 || true)"
 
-  if echo "$ssh_out" | grep -q "^ssh-"; then
-    key_count="$(printf '%s\n' "$ssh_out" | grep -c "^ssh-" || true)"
+  if echo "$ssh_out" | grep -qE "^(ssh-|ecdsa-|sk-)"; then
+    key_count="$(printf '%s\n' "$ssh_out" | grep -Ec "^(ssh-|ecdsa-|sk-)" || true)"
     ok "SSH agent reachable ($key_count key(s) loaded)"
   elif echo "$ssh_out" | grep -qiE "could not open a connection|error connecting to agent|failed to connect to the agent"; then
     warn "SSH agent not accessible from this shell"
