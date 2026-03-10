@@ -13,9 +13,7 @@ Just explicit, readable infrastructure.
 
 # 🧠 Philosophy
 
-Your environment shapes how you think.
-
-This setup is built around:
+This setup prioritizes:
 
 - 🧱 Structure over improvisation
 - 🎯 Explicit formatting rules
@@ -24,7 +22,7 @@ This setup is built around:
 - 🔐 Signed commits (optional bootstrap)
 - 🧼 Minimalism without fragility
 
-Everything is readable. Everything is intentional.
+Readable files, explicit behavior, and repeatable bootstrap.
 
 ---
 

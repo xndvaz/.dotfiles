@@ -1,8 +1,8 @@
 # ------------------------------------------------------------
 # Aliases configuration
 # ------------------------------------------------------------
-# Centralized command shortcuts.
-# Keep this file focused on productivity helpers.
+# Interactive shell shortcuts and small git helpers.
+# Keep this file focused on user-invoked commands (no global exports).
 # ------------------------------------------------------------
 
 # ------------------------------------------------------------

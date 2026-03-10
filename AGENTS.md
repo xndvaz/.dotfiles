@@ -16,9 +16,9 @@ The goal is explicit, readable, idempotent configuration rather than hidden auto
 - `zshrc.bootstrap`: minimal loader for shell modules
 
 ## Current behavior notes
-- `zshrc.bootstrap` resolves module paths relative to itself (location-independent clone path).
-- `scripts/install.sh` supports interactive and non-interactive modes, with explicit CI flags (for example `--strict-extensions`, `--configure-signing`, `--configure-identity`, `--signing-key`).
-- `scripts/doctor.sh` supports `--non-interactive` and avoids GUI auto-open actions in headless/non-TTY execution.
+- `zshrc.bootstrap` resolves module paths from its own file path. Do not reintroduce `~/.dotfiles` hardcoding.
+- `scripts/install.sh` must keep CLI/documentation parity for automation flags (`--non-interactive`, `--strict-extensions`, `--configure-signing`, `--configure-identity`, `--signing-key`, `--git-name`, `--git-email`).
+- `scripts/doctor.sh` must remain safe for headless execution (`--non-interactive`, non-TTY auto-detect, no forced GUI launch).
 
 ## Required reads before changes
 Agents must read and follow the files in `.ai/` before making edits:
