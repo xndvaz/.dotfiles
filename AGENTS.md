@@ -18,7 +18,9 @@ The goal is explicit, readable, idempotent configuration rather than hidden auto
 ## Current behavior notes
 - `zshrc.bootstrap` resolves module paths from its own file path. Do not reintroduce `~/.dotfiles` hardcoding.
 - `scripts/install.sh` must keep CLI/documentation parity for automation flags (`--non-interactive`, `--strict-extensions`, `--configure-signing`, `--configure-identity`, `--signing-key`, `--git-name`, `--git-email`).
+- `scripts/install.sh` must propagate `--non-interactive` behavior to post-install `doctor.sh` execution.
 - `scripts/doctor.sh` must remain safe for headless execution (`--non-interactive`, non-TTY auto-detect, no forced GUI launch).
+- 1Password SSH agent socket detection in shell/scripts must avoid recursive scans under `~/Library/Group Containers`; use bounded glob/compgen lookups.
 
 ## Required reads before changes
 Agents must read and follow the files in `.ai/` before making edits:
@@ -37,3 +39,4 @@ Before changing code or configuration, agents must analyze the repository:
 2. Check existing conventions and decision history in `.ai/`.
 3. Make minimal, scoped changes that preserve reproducibility and idempotency.
 4. Update `.ai/decisions.md` when introducing a significant technical decision.
+5. Run quick validation checks for touched scripts (for example `bash -n` and relevant `--help`/non-interactive flows).

@@ -114,6 +114,7 @@ Behavior:
 - If 1Password agent socket exists → prefer it
 - Otherwise → fallback to macOS launchd agent
 - `doctor.sh --fix` can force the current session to use 1Password
+- Agent socket discovery uses a bounded glob lookup (no recursive `find` scan), keeping doctor/install runs responsive.
 
 No key generation. No key management. Only environment alignment.
 
@@ -298,6 +299,7 @@ bash ~/.dotfiles/scripts/install.sh \
 ```
 
 If stdin is not a TTY (for example in CI/pipelines), installer prompts are automatically disabled.
+The same non-interactive behavior is propagated to the post-install doctor run.
 
 For strict CI semantics, use `--configure-signing=yes` / `--configure-identity=yes`
 to fail fast when required prerequisites are missing.
