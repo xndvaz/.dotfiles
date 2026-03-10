@@ -71,6 +71,23 @@ err() { echo "✖ $1"; errors=$((errors + 1)); }
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
+detect_1password_agent_socket() {
+  local pattern="$HOME/Library/Group Containers/*.com.1password*/t/agent.sock"
+  local -a socket_candidates=()
+  local socket_path
+
+  mapfile -t socket_candidates < <(compgen -G "$pattern" || true)
+
+  for socket_path in "${socket_candidates[@]}"; do
+    if [[ -S "$socket_path" ]]; then
+      printf '%s\n' "$socket_path"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 kv() {
   printf "%s: %s\n" "$1" "${2:-<unset>}"
 }
@@ -386,10 +403,7 @@ fi
 
 section "SSH Agent"
 
-OP_SSH_SOCK="$(
-  find "$HOME/Library/Group Containers" -maxdepth 4 -type s -name agent.sock \
-    -path "*com.1password*/t/agent.sock" 2>/dev/null | head -n 1 || true
-)"
+OP_SSH_SOCK="$(detect_1password_agent_socket || true)"
 
 if [[ -n "$OP_SSH_SOCK" && -S "$OP_SSH_SOCK" ]]; then
   ok "1Password SSH agent detected"
@@ -486,9 +500,14 @@ fi
 # Revalidation
 # -----------------------------------------------------------------------------
 if [[ "$FIX" -eq 1 && "$FIX_APPLIED" -eq 1 && "$RERUN_AFTER_FIX" -eq 0 ]]; then
+  rerun_args=()
+  if [[ "$NON_INTERACTIVE" -eq 1 ]]; then
+    rerun_args+=(--non-interactive)
+  fi
+
   echo ""
   echo "Re-running doctor after applied fixes..."
-  DOCTOR_RERUN_AFTER_FIX=1 exec bash "$0"
+  DOCTOR_RERUN_AFTER_FIX=1 exec bash "$0" "${rerun_args[@]}"
 fi
 
 # -----------------------------------------------------------------------------
