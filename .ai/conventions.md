@@ -37,4 +37,4 @@
 - When introducing a new pattern or architectural change, record it in `.ai/decisions.md`.
 - Update `README.md` when a new file changes user-facing setup behavior.
 - When changing installer/doctor CLI semantics, update all of the following in the same change: script `--help`, `README.md`, smoke tests, and `.ai/decisions.md`.
-- When preparing a release, update `CHANGELOG.md` first and then create an annotated Git tag from `main`.
+- When preparing a release, create an annotated Git tag from `main` and keep tag messages descriptive.

@@ -64,7 +64,6 @@ It's a foundation — not a rigid framework.
 | `vscode/keybindings.json` | VS Code keybindings |
 | `vscode/extensions.txt` | VS Code extensions list |
 | `AGENTS.md` | Repository agent operating rules |
-| `CHANGELOG.md` | Release notes history |
 | `LICENCE` | License text |
 | `README.md` | Project overview and onboarding |
 | `.editorconfig` | Cross-tool formatting baseline |
@@ -363,21 +362,22 @@ The workflow is defined in `.github/workflows/ci.yml`.
 
 ---
 
-# 🏷 Releases and Changelog
+# 🏷 Releases
 
-Release history is tracked in `CHANGELOG.md`.
+Release tracking in this repository is Git-native (annotated tags + commit history).
 
 Recommended release flow:
 
-1. Update `CHANGELOG.md` under `Unreleased`.
-2. Cut an annotated tag from `main`:
+1. Ensure `main` contains the final release commits.
+2. Cut an annotated tag from `main` and push branch + tag:
 
 ```bash
 git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin main
 git push origin v0.1.0
 ```
 
-Use semantic version tags (`vMAJOR.MINOR.PATCH`) for consistency.
+Use semantic version tags (`vMAJOR.MINOR.PATCH`) and descriptive tag messages.
 
 ---
 

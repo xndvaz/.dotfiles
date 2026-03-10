@@ -151,23 +151,38 @@ Use this file to track decisions that affect architecture, workflows, or long-te
 - Supersedes / Superseded by:
   None.
 
-## DEC-20260310-shell-quality-gates-and-release-changelog
+## DEC-20260310-shell-quality-gates
 - Date: 2026-03-10
 - Status: accepted
 - Context:
-  Repository quality checks were manual and release history did not have a structured changelog/tag workflow.
+  Repository quality checks were manual.
 - Decision:
   Add a GitHub Actions CI workflow with shell quality gates: `bash -n`, `shellcheck`, `shfmt -d`, installer smoke tests, and doctor non-interactive checks.
-  Add `CHANGELOG.md` and define release hygiene around changelog-first updates with annotated Git tags.
 - Consequences:
   Catches shell regressions earlier and keeps automation behavior measurable.
-  Improves release traceability for users consuming the dotfiles over time.
-  Slightly increases maintenance work to keep tests and changelog current.
+  Slightly increases maintenance work to keep tests current.
 - Alternatives considered:
   Keep ad hoc local validation only; rejected due to lower reliability.
   Add heavyweight test framework; rejected as unnecessary for current repository size.
 - Supersedes / Superseded by:
   None.
+
+## DEC-20260310-git-only-release-tracking
+- Date: 2026-03-10
+- Status: accepted
+- Context:
+  The repository is personal/public and changelog maintenance duplicated information already present in commits and tags.
+  The extra file created drift risk in README and onboarding docs.
+- Decision:
+  Remove `CHANGELOG.md` from the repository.
+  Track releases exclusively through annotated Git tags and commit history.
+- Consequences:
+  Reduces repository maintenance and stale release-note risk in tracked files.
+  Consumers inspect release metadata using Git primitives (`git tag`, `git show`, `git log`).
+- Alternatives considered:
+  Keep `CHANGELOG.md`; rejected due to duplicated maintenance overhead for this repository scope.
+- Supersedes / Superseded by:
+  Supersedes the release-tracking portion previously bundled with CI guidance.
 
 ## DEC-20260310-doctor-smoke-test-coverage
 - Date: 2026-03-10

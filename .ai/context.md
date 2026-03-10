@@ -17,7 +17,7 @@ This is a personal dotfiles repository for macOS. It provides a reproducible, mo
 - Prefer explicit behavior over convenience magic.
 - Support both interactive local setup and non-interactive CI/headless bootstrap flows.
 - Keep shell quality checks automated in CI to catch regressions early.
-- Keep release history traceable through changelog entries and Git tags.
+- Keep release history traceable through Git tags and commit history.
 
 ## Constraints
 - Primary target is macOS.
@@ -26,4 +26,4 @@ This is a personal dotfiles repository for macOS. It provides a reproducible, mo
 - Bootstrap/doctor flows should remain reliable for fresh environments.
 - Shell/bootstrap path resolution must remain location-independent (no hardcoded `~/.dotfiles` assumptions).
 - User-facing installer/doctor CLI behavior must stay consistent with script `--help` output and `README.md`.
-- Release notes and tagging conventions should remain documented and up to date.
+- Tagging conventions should remain documented and up to date.
