@@ -45,42 +45,34 @@ It's a foundation — not a rigid framework.
 
 # 🏗 Architecture
 
-```text
-<dotfiles-repo-root>
-|-- .ai/
-|   |-- context.md                    -> Project goals and constraints
-|   |-- conventions.md                -> Code and workflow conventions
-|   `-- decisions.md                  -> Technical decision log
-|-- .github/
-|   `-- workflows/
-|       `-- ci.yml                    -> Shell quality gates
-|-- git/
-|   `-- commit-template               -> User-managed Git commit template
-|-- scripts/
-|   |-- install.sh                    -> Bootstrap + environment provisioning
-|   |-- doctor.sh                     -> Environment diagnostics & validation
-|   `-- test-install-flags.sh         -> Installer CLI smoke tests
-|-- shell/
-|   |-- 10-base.zsh                   -> Core shell behavior
-|   |-- 20-exports.zsh                -> Environment variables + SSH agent preference
-|   |-- 30-paths.zsh                  -> Homebrew-aware PATH management
-|   `-- 40-aliases.zsh                -> Command shortcuts
-|-- vscode/
-|   |-- settings.json
-|   |-- keybindings.json
-|   `-- extensions.txt
-|-- AGENTS.md                         -> Repository agent operating rules
-|-- CHANGELOG.md                      -> Release notes history
-|-- LICENCE                           -> License text
-|-- README.md                         -> Project overview and onboarding
-|-- .editorconfig                     -> Cross-tool formatting baseline
-|-- .prettierrc                       -> Explicit formatting rules
-|-- .prettierignore
-`-- zshrc.bootstrap                   -> Minimal shell loader
-```
+| Path | Purpose |
+| --- | --- |
+| `.ai/context.md` | Project goals and constraints |
+| `.ai/conventions.md` | Code and workflow conventions |
+| `.ai/decisions.md` | Technical decision log |
+| `.github/workflows/ci.yml` | Shell quality gates |
+| `git/commit-template` | User-managed Git commit template |
+| `scripts/install.sh` | Bootstrap and environment provisioning |
+| `scripts/doctor.sh` | Environment diagnostics and validation |
+| `scripts/test-install-flags.sh` | Installer CLI smoke tests |
+| `shell/10-base.zsh` | Core shell behavior |
+| `shell/20-exports.zsh` | Environment variables and SSH agent preference |
+| `shell/30-paths.zsh` | Homebrew-aware PATH management |
+| `shell/40-aliases.zsh` | Command shortcuts |
+| `vscode/settings.json` | VS Code settings |
+| `vscode/keybindings.json` | VS Code keybindings |
+| `vscode/extensions.txt` | VS Code extensions list |
+| `AGENTS.md` | Repository agent operating rules |
+| `CHANGELOG.md` | Release notes history |
+| `LICENCE` | License text |
+| `README.md` | Project overview and onboarding |
+| `.editorconfig` | Cross-tool formatting baseline |
+| `.prettierrc` | Explicit formatting rules |
+| `.prettierignore` | Prettier ignore rules |
+| `zshrc.bootstrap` | Minimal shell loader |
 
 Note: `.git/` is the Git internal database for this repository and is intentionally omitted.
-The tracked `git/` folder contains user-facing Git assets consumed by setup scripts.
+The tracked `git/` directory stores user-facing Git assets consumed by setup scripts.
 
 ---
 
