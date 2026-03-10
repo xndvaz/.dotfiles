@@ -47,37 +47,40 @@ It's a foundation — not a rigid framework.
 
 ```text
 <dotfiles-repo-root>
-├── .ai/
-│   ├── context.md                → Project goals and constraints
-│   ├── conventions.md            → Code and workflow conventions
-│   └── decisions.md              → Technical decision log
-├── .github/
-│   └── workflows/
-│       └── ci.yml                → Shell quality gates
-├── git/
-│   └── commit-template           → Commit message template
-├── scripts/
-│   ├── install.sh                → Bootstrap + environment provisioning
-│   ├── doctor.sh                 → Environment diagnostics & validation
-│   └── test-install-flags.sh     → Installer CLI smoke tests
-├── shell/
-│   ├── 10-base.zsh               → Core shell behavior
-│   ├── 20-exports.zsh            → Environment variables & SSH agent preference
-│   ├── 30-paths.zsh              → Homebrew-aware PATH management
-│   └── 40-aliases.zsh            → Command shortcuts
-├── vscode/
-│   ├── settings.json
-│   ├── keybindings.json
-│   └── extensions.txt
-├── AGENTS.md                     → Repository agent operating rules
-├── CHANGELOG.md                  → Release notes history
-├── LICENCE                       → License text
-├── README.md                     → Project overview and onboarding
-├── .editorconfig                 → Cross-tool formatting baseline
-├── .prettierrc                   → Explicit formatting rules
-├── .prettierignore
-└── zshrc.bootstrap               → Minimal shell loader
+|-- .ai/
+|   |-- context.md                    -> Project goals and constraints
+|   |-- conventions.md                -> Code and workflow conventions
+|   `-- decisions.md                  -> Technical decision log
+|-- .github/
+|   `-- workflows/
+|       `-- ci.yml                    -> Shell quality gates
+|-- git/
+|   `-- commit-template               -> User-managed Git commit template
+|-- scripts/
+|   |-- install.sh                    -> Bootstrap + environment provisioning
+|   |-- doctor.sh                     -> Environment diagnostics & validation
+|   `-- test-install-flags.sh         -> Installer CLI smoke tests
+|-- shell/
+|   |-- 10-base.zsh                   -> Core shell behavior
+|   |-- 20-exports.zsh                -> Environment variables + SSH agent preference
+|   |-- 30-paths.zsh                  -> Homebrew-aware PATH management
+|   `-- 40-aliases.zsh                -> Command shortcuts
+|-- vscode/
+|   |-- settings.json
+|   |-- keybindings.json
+|   `-- extensions.txt
+|-- AGENTS.md                         -> Repository agent operating rules
+|-- CHANGELOG.md                      -> Release notes history
+|-- LICENCE                           -> License text
+|-- README.md                         -> Project overview and onboarding
+|-- .editorconfig                     -> Cross-tool formatting baseline
+|-- .prettierrc                       -> Explicit formatting rules
+|-- .prettierignore
+`-- zshrc.bootstrap                   -> Minimal shell loader
 ```
+
+Note: `.git/` is the Git internal database for this repository and is intentionally omitted.
+The tracked `git/` folder contains user-facing Git assets consumed by setup scripts.
 
 ---
 
@@ -289,7 +292,8 @@ python3 --version
 ## 5️⃣ Clone This Repository
 
 ```bash
-git clone https://github.com/xndvaz/.dotfiles.git ~/.dotfiles
+DOTFILES_DIR="$HOME/.dotfiles"
+git clone https://github.com/xndvaz/.dotfiles.git "$DOTFILES_DIR"
 ```
 
 ---
@@ -297,7 +301,7 @@ git clone https://github.com/xndvaz/.dotfiles.git ~/.dotfiles
 ## 6️⃣ Run Installer
 
 ```bash
-bash ~/.dotfiles/scripts/install.sh
+bash "$DOTFILES_DIR/scripts/install.sh"
 ```
 
 During installation, you may be asked:
@@ -308,16 +312,12 @@ If Git identity is missing, installer prompt mode can also ask for:
 
 > Configure now? (Y/N)
 
-If your clone is not in `~/.dotfiles`, run the installer from your clone path:
-
-```bash
-bash /absolute/path/to/your/clone/scripts/install.sh
-```
+If you cloned to a different directory, set `DOTFILES_DIR` accordingly before running commands below.
 
 For automated/bootstrap scripts, you can run non-interactively:
 
 ```bash
-bash ~/.dotfiles/scripts/install.sh \
+bash "$DOTFILES_DIR/scripts/install.sh" \
   --non-interactive \
   --strict-extensions \
   --configure-signing=no \
@@ -335,7 +335,7 @@ to fail fast when required prerequisites are missing.
 For an audit run that prints planned actions without modifying your machine:
 
 ```bash
-bash ~/.dotfiles/scripts/install.sh \
+bash "$DOTFILES_DIR/scripts/install.sh" \
   --dry-run \
   --non-interactive \
   --configure-signing=no \
@@ -345,7 +345,7 @@ bash ~/.dotfiles/scripts/install.sh \
 If you need SSH signing in non-interactive mode and have multiple keys loaded:
 
 ```bash
-bash ~/.dotfiles/scripts/install.sh \
+bash "$DOTFILES_DIR/scripts/install.sh" \
   --non-interactive \
   --configure-signing=yes \
   --signing-key "ssh-ed25519 AAAA...YOUR_PUBLIC_KEY..."
@@ -358,13 +358,7 @@ After installation, the doctor runs automatically.
 ## 7️⃣ Validate With Doctor
 
 ```bash
-bash ~/.dotfiles/scripts/doctor.sh --non-interactive
-```
-
-If your clone is elsewhere:
-
-```bash
-bash /absolute/path/to/your/clone/scripts/doctor.sh --non-interactive
+bash "$DOTFILES_DIR/scripts/doctor.sh" --non-interactive
 ```
 
 ---
