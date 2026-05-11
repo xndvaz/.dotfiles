@@ -1,0 +1,30 @@
+:root {
+  --bg: #f5f3ed;
+  --fg: #1f2d2f;
+  --accent: #0b6e6f;
+  --muted: #6b7f81;
+}
+
+.reveal {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  background: radial-gradient(circle at 12% 10%, #fff7d6 0%, var(--bg) 42%, #e6ecec 100%);
+  color: var(--fg);
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3 {
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.reveal p,
+.reveal li {
+  color: var(--fg);
+  font-size: 0.95em;
+}
+
+.reveal .slide-number {
+  color: var(--muted);
+}

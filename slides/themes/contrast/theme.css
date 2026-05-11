@@ -1,0 +1,29 @@
+:root {
+  --bg: #11130f;
+  --fg: #f5f6f0;
+  --accent: #ff9f1c;
+  --muted: #bfc2b4;
+}
+
+.reveal {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  background: linear-gradient(145deg, #090a07 0%, #11130f 45%, #1c2018 100%);
+  color: var(--fg);
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3 {
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.reveal p,
+.reveal li {
+  color: var(--fg);
+  font-size: 0.95em;
+}
+
+.reveal .slide-number {
+  color: var(--muted);
+}
