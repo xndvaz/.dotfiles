@@ -1,0 +1,47 @@
+# ------------------------------------------------------------
+# Bash bootstrap for dotfiles (macOS-focused)
+# ------------------------------------------------------------
+
+# Keep history compact and shared.
+HISTCONTROL=ignoredups:erasedups
+HISTSIZE=5000
+HISTFILESIZE=5000
+
+# Editor defaults.
+export EDITOR='code --wait'
+export VISUAL="$EDITOR"
+
+# Prefer Homebrew paths when available.
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -x /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+# User-local bin.
+if [[ -d "$HOME/.local/bin" ]]; then
+  PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Prefer 1Password SSH agent on macOS.
+if [[ "$OSTYPE" == darwin* ]]; then
+  op_pattern="$HOME/Library/Group Containers"/*.com.1password*/t/agent.sock
+  for op_sock in $op_pattern; do
+    if [[ -S "$op_sock" ]]; then
+      export SSH_AUTH_SOCK="$op_sock"
+      break
+    fi
+  done
+fi
+
+# Git shortcuts.
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git pull'
+alias glg='git log --graph --oneline --decorate'
+
+# Utilities.
+alias ll='ls -lah'
+alias c.='code .'

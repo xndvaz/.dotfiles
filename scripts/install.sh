@@ -95,6 +95,8 @@ CONFIGURE_IDENTITY="prompt"
 CLI_SIGNING_KEY=""
 CLI_GIT_NAME=""
 CLI_GIT_EMAIL=""
+SELECTED_GIT_NAME=""
+SELECTED_GIT_EMAIL=""
 
 print_usage() {
   cat <<EOF
@@ -277,7 +279,19 @@ VSCODE_SETTINGS="$VSCODE_USER_DIR/settings.json"
 VSCODE_KEYBINDINGS="$VSCODE_USER_DIR/keybindings.json"
 
 REPO_ZSH_BOOTSTRAP="$REPO_ROOT/zshrc.bootstrap"
+REPO_BASHRC="$REPO_ROOT/shell/bashrc"
 REPO_GIT_COMMIT_TEMPLATE="$REPO_ROOT/git/commit-template"
+REPO_GIT_CONFIG_TEMPLATE="$REPO_ROOT/git/config.template"
+REPO_GIT_HOOKS_DIR="$REPO_ROOT/scripts/hooks"
+REPO_CODEX_DIR="$REPO_ROOT/codex"
+REPO_CODEX_AGENTS="$REPO_CODEX_DIR/AGENTS.md"
+REPO_CODEX_CONFIG="$REPO_CODEX_DIR/config.toml"
+REPO_SKILLS_DIR="$REPO_ROOT/skills"
+
+CODEX_HOME_DIR="$HOME/.codex"
+CODEX_AGENTS_TARGET="$CODEX_HOME_DIR/AGENTS.md"
+CODEX_CONFIG_TARGET="$CODEX_HOME_DIR/config.toml"
+CODEX_SKILLS_TARGET="$CODEX_HOME_DIR/skills"
 
 # -----------------------------------------------------------------------------
 # Safety checks
@@ -349,6 +363,59 @@ link_file() {
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
+ensure_homebrew_available() {
+  if [[ "$(uname -s)" != "Darwin" ]]; then
+    return 0
+  fi
+
+  if have_cmd brew; then
+    return 0
+  fi
+
+  echo "Error: Homebrew is required on macOS for this installer." >&2
+  echo "Install Homebrew first: https://brew.sh/" >&2
+  return 1
+}
+
+install_required_tools() {
+  echo ""
+  echo "== Required tooling =="
+
+  if [[ "$(uname -s)" != "Darwin" ]]; then
+    echo "Notice: non-macOS environment. Skipping Homebrew tooling bootstrap."
+    return 0
+  fi
+
+  ensure_homebrew_available || return 1
+
+  local -a tool_specs=(
+    "gh:gh"
+    "node:node"
+    "shellcheck:shellcheck"
+    "git-cliff:git-cliff"
+    "go:go"
+  )
+  local spec tool_name brew_pkg
+
+  for spec in "${tool_specs[@]}"; do
+    tool_name="${spec%%:*}"
+    brew_pkg="${spec##*:}"
+
+    if have_cmd "$tool_name"; then
+      echo "Already installed: $tool_name"
+      continue
+    fi
+
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      echo "[dry-run] Would install via brew: $brew_pkg"
+      continue
+    fi
+
+    echo "Installing via brew: $brew_pkg"
+    brew install "$brew_pkg"
+  done
+}
+
 # -----------------------------------------------------------------------------
 # Utility: detect 1Password SSH agent socket without recursive filesystem scan
 # -----------------------------------------------------------------------------
@@ -381,6 +448,207 @@ ensure_zsh_bootstrap() {
   fi
 
   link_file "$REPO_ZSH_BOOTSTRAP" "$user_zshrc"
+}
+
+ensure_bashrc_bootstrap() {
+  local user_bashrc="$HOME/.bashrc"
+
+  if [[ ! -f "$REPO_BASHRC" ]]; then
+    echo "Error: expected file not found: $REPO_BASHRC" >&2
+    exit 1
+  fi
+
+  link_file "$REPO_BASHRC" "$user_bashrc"
+}
+
+ensure_codex_links() {
+  echo ""
+  echo "== Codex configuration links =="
+
+  if [[ ! -f "$REPO_CODEX_AGENTS" ]]; then
+    echo "Error: expected file not found: $REPO_CODEX_AGENTS" >&2
+    return 1
+  fi
+  if [[ ! -f "$REPO_CODEX_CONFIG" ]]; then
+    echo "Error: expected file not found: $REPO_CODEX_CONFIG" >&2
+    return 1
+  fi
+  if [[ ! -d "$REPO_SKILLS_DIR" ]]; then
+    echo "Error: expected directory not found: $REPO_SKILLS_DIR" >&2
+    return 1
+  fi
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would ensure directory exists: $CODEX_HOME_DIR"
+  else
+    mkdir -p "$CODEX_HOME_DIR"
+  fi
+
+  link_file "$REPO_CODEX_AGENTS" "$CODEX_AGENTS_TARGET"
+  link_file "$REPO_CODEX_CONFIG" "$CODEX_CONFIG_TARGET"
+  link_file "$REPO_SKILLS_DIR" "$CODEX_SKILLS_TARGET"
+}
+
+escape_sed_replacement() {
+  printf '%s' "$1" | sed -e 's/[&|]/\\&/g'
+}
+
+resolve_openssh_keygen_path() {
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    if [[ -x /usr/bin/ssh-keygen ]]; then
+      printf '%s\n' "/usr/bin/ssh-keygen"
+      return 0
+    fi
+  fi
+
+  if have_cmd ssh-keygen; then
+    command -v ssh-keygen
+    return 0
+  fi
+
+  return 1
+}
+
+resolve_git_identity_values() {
+  local current_name current_email
+  current_name="$(git config --global --get user.name || true)"
+  current_email="$(git config --global --get user.email || true)"
+
+  if [[ -n "$CLI_GIT_NAME" ]]; then
+    SELECTED_GIT_NAME="$CLI_GIT_NAME"
+  else
+    SELECTED_GIT_NAME="$current_name"
+  fi
+
+  if [[ -n "$CLI_GIT_EMAIL" ]]; then
+    SELECTED_GIT_EMAIL="$CLI_GIT_EMAIL"
+  else
+    SELECTED_GIT_EMAIL="$current_email"
+  fi
+}
+
+generate_gitconfig_from_template() {
+  echo ""
+  echo "== Git config template =="
+
+  if ! have_cmd git; then
+    echo "Notice: git not found. Skipping gitconfig template rendering."
+    return 0
+  fi
+  if [[ ! -f "$REPO_GIT_CONFIG_TEMPLATE" ]]; then
+    echo "Notice: git config template not found: $REPO_GIT_CONFIG_TEMPLATE"
+    return 0
+  fi
+
+  resolve_git_identity_values
+
+  local signing_key openssh_keygen
+  signing_key="$(git config --global --get user.signingkey || true)"
+  if [[ -n "$CLI_SIGNING_KEY" ]]; then
+    signing_key="$CLI_SIGNING_KEY"
+  fi
+
+  if ! openssh_keygen="$(resolve_openssh_keygen_path)"; then
+    echo "Notice: ssh-keygen not found. Skipping gitconfig rendering."
+    return 0
+  fi
+
+  if [[ -z "$SELECTED_GIT_NAME" || -z "$SELECTED_GIT_EMAIL" || -z "$signing_key" ]]; then
+    echo "Notice: missing git identity/signing values for template rendering."
+    echo "  user.name:  ${SELECTED_GIT_NAME:-<unset>}"
+    echo "  user.email: ${SELECTED_GIT_EMAIL:-<unset>}"
+    echo "  signingkey: ${signing_key:-<unset>}"
+    return 0
+  fi
+
+  local escaped_name escaped_email escaped_key escaped_root escaped_keygen target rendered
+  escaped_name="$(escape_sed_replacement "$SELECTED_GIT_NAME")"
+  escaped_email="$(escape_sed_replacement "$SELECTED_GIT_EMAIL")"
+  escaped_key="$(escape_sed_replacement "$signing_key")"
+  escaped_root="$(escape_sed_replacement "$REPO_ROOT")"
+  escaped_keygen="$(escape_sed_replacement "$openssh_keygen")"
+  target="$HOME/.gitconfig"
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would render gitconfig from template to: $target"
+    return 0
+  fi
+
+  rendered="$(mktemp)"
+  sed \
+    -e "s|YOUR_NAME|$escaped_name|g" \
+    -e "s|YOUR_EMAIL|$escaped_email|g" \
+    -e "s|YOUR_SSH_KEY|$escaped_key|g" \
+    -e "s|YOUR_DOTFILES_DIR|$escaped_root|g" \
+    -e "s|YOUR_OPENSSH_KEYGEN|$escaped_keygen|g" \
+    "$REPO_GIT_CONFIG_TEMPLATE" >"$rendered"
+
+  if [[ -f "$target" ]] && cmp -s "$target" "$rendered"; then
+    rm -f "$rendered"
+    echo "Already rendered: $target"
+    return 0
+  fi
+
+  backup_if_exists "$target"
+  mv "$rendered" "$target"
+
+  echo "Rendered: $target"
+}
+
+ensure_allowed_signers_file() {
+  echo ""
+  echo "== SSH allowed signers =="
+
+  if ! have_cmd git; then
+    echo "Notice: git not found. Skipping allowed_signers setup."
+    return 0
+  fi
+
+  local email signing_key line signers_file tmp
+  email="$(git config --global --get user.email || true)"
+  signing_key="$(git config --global --get user.signingkey || true)"
+  signers_file="$HOME/.ssh/allowed_signers"
+
+  if [[ -z "$email" || -z "$signing_key" ]]; then
+    echo "Notice: missing user.email or user.signingkey. Skipping allowed_signers setup."
+    return 0
+  fi
+
+  line="$email namespaces=\"git\" $signing_key"
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would ensure allowed signer entry in: $signers_file"
+    echo "[dry-run] Entry: $line"
+    return 0
+  fi
+
+  mkdir -p "$HOME/.ssh"
+  touch "$signers_file"
+
+  if grep -Fxq "$line" "$signers_file"; then
+    echo "Already configured: $signers_file"
+    return 0
+  fi
+
+  tmp="$(mktemp)"
+  awk -v email="$email" -v newline="$line" '
+    BEGIN { replaced = 0 }
+    $1 == email && $2 == "namespaces=\"git\"" {
+      if (!replaced) {
+        print newline
+        replaced = 1
+      }
+      next
+    }
+    { print }
+    END {
+      if (!replaced) {
+        print newline
+      }
+    }
+  ' "$signers_file" >"$tmp"
+  mv "$tmp" "$signers_file"
+  echo "Configured: $signers_file"
 }
 
 # -----------------------------------------------------------------------------
@@ -526,6 +794,37 @@ configure_git_commit_template() {
   else
     git config --global commit.template "$desired"
     echo "Configured: commit.template=$desired"
+  fi
+}
+
+configure_git_hooks_path() {
+  echo ""
+  echo "== Git hooks path =="
+
+  if ! have_cmd git; then
+    echo "Notice: git not found. Skipping hooks path setup."
+    return 0
+  fi
+
+  if [[ ! -d "$REPO_GIT_HOOKS_DIR" ]]; then
+    echo "Notice: hooks directory not found: $REPO_GIT_HOOKS_DIR"
+    return 0
+  fi
+
+  local desired current
+  desired="$REPO_GIT_HOOKS_DIR"
+  current="$(git config --global --get core.hooksPath || true)"
+
+  if [[ "$current" == "$desired" ]]; then
+    echo "Already configured: core.hooksPath=$desired"
+    return 0
+  fi
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "[dry-run] Would configure: core.hooksPath=$desired"
+  else
+    git config --global core.hooksPath "$desired"
+    echo "Configured: core.hooksPath=$desired"
   fi
 }
 
@@ -693,7 +992,6 @@ configure_git_ssh_signing() {
     git config --global gpg.format ssh
     git config --global commit.gpgsign true
     git config --global user.signingkey "$selected_key"
-
     echo "✅ SSH commit signing configured."
     echo "Signing key: $(git config --global --get user.signingkey)"
   fi
@@ -740,6 +1038,8 @@ configure_git_identity() {
     fi
 
     if [[ "$current_name" == "$CLI_GIT_NAME" && "$current_email" == "$CLI_GIT_EMAIL" ]]; then
+      SELECTED_GIT_NAME="$current_name"
+      SELECTED_GIT_EMAIL="$current_email"
       echo "Already configured:"
       echo "  user.name  = $current_name"
       echo "  user.email = $current_email"
@@ -747,18 +1047,24 @@ configure_git_identity() {
     fi
 
     if [[ "$DRY_RUN" -eq 1 ]]; then
+      SELECTED_GIT_NAME="$CLI_GIT_NAME"
+      SELECTED_GIT_EMAIL="$CLI_GIT_EMAIL"
       echo "[dry-run] Would configure Git identity:"
       echo "  user.name  = $CLI_GIT_NAME"
       echo "  user.email = $CLI_GIT_EMAIL"
     else
       git config --global user.name "$CLI_GIT_NAME"
       git config --global user.email "$CLI_GIT_EMAIL"
+      SELECTED_GIT_NAME="$CLI_GIT_NAME"
+      SELECTED_GIT_EMAIL="$CLI_GIT_EMAIL"
       echo "Git identity configured."
     fi
     return 0
   fi
 
   if [[ -n "$current_name" && -n "$current_email" ]]; then
+    SELECTED_GIT_NAME="$current_name"
+    SELECTED_GIT_EMAIL="$current_email"
     echo "Already configured:"
     echo "  user.name  = $current_name"
     echo "  user.email = $current_email"
@@ -817,21 +1123,36 @@ configure_git_identity() {
   fi
 
   if [[ "$DRY_RUN" -eq 1 ]]; then
+    SELECTED_GIT_NAME="$new_name"
+    SELECTED_GIT_EMAIL="$new_email"
     echo "[dry-run] Would configure Git identity:"
     echo "  user.name  = $new_name"
     echo "  user.email = $new_email"
   else
     git config --global user.name "$new_name"
     git config --global user.email "$new_email"
+    SELECTED_GIT_NAME="$new_name"
+    SELECTED_GIT_EMAIL="$new_email"
 
     echo "Git identity configured."
   fi
 }
 
 # -----------------------------------------------------------------------------
-# Execution: Zsh bootstrap
+# Execution: required tooling (macOS/Homebrew)
+# -----------------------------------------------------------------------------
+install_required_tools
+
+# -----------------------------------------------------------------------------
+# Execution: shell bootstrap links
 # -----------------------------------------------------------------------------
 ensure_zsh_bootstrap
+ensure_bashrc_bootstrap
+
+# -----------------------------------------------------------------------------
+# Execution: Codex links
+# -----------------------------------------------------------------------------
+ensure_codex_links
 
 # -----------------------------------------------------------------------------
 # Execution: VS Code links
@@ -868,8 +1189,11 @@ install_extensions "$REPO_EXTENSIONS_LIST"
 if [[ "$(uname -s)" == "Darwin" ]]; then
   configure_git_editor
   configure_git_commit_template
+  configure_git_hooks_path
   configure_git_ssh_signing
   configure_git_identity
+  generate_gitconfig_from_template
+  ensure_allowed_signers_file
 else
   echo "Notice: Git setup is macOS-only in this script. Skipping."
 fi

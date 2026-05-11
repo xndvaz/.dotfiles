@@ -27,6 +27,12 @@ type(scope): short description
 # shell       shell modules and environment
 # ssh         SSH agent and signing configuration
 # git         git configuration and tooling
+# codex       Codex config and global guidance
+# skills      reviewer skill definitions and learning policy
+# ci          CI workflow checks
+# release     release automation and git-cliff config
+# test        smoke tests and validation helpers
+# slides      Reveal.js slide templates and themes
 # vscode      VS Code configuration
 # repo        repository structure
 # docs        documentation
@@ -44,5 +50,6 @@ type(scope): short description
 # Explain WHY the change was made if not obvious.
 #
 # Footer (optional)
-# Reference issues or breaking changes.
+# Refs #<issue>
+# BREAKING CHANGE: <description>
 # --------------------------------------------------------------------

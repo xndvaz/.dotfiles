@@ -99,9 +99,21 @@ assert_dry_run_no_mutation() {
     return
   fi
 
+  if [[ -e "$case_home/.bashrc" ]]; then
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    echo "FAIL: dry-run created $case_home/.bashrc"
+    return
+  fi
+
   if [[ -e "$case_home/Library/Application Support/Code/User/settings.json" ]]; then
     FAIL_COUNT=$((FAIL_COUNT + 1))
     echo "FAIL: dry-run created VS Code settings symlink"
+    return
+  fi
+
+  if [[ -e "$case_home/.codex/AGENTS.md" || -e "$case_home/.codex/config.toml" || -e "$case_home/.codex/skills" ]]; then
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    echo "FAIL: dry-run created Codex links in HOME"
     return
   fi
 

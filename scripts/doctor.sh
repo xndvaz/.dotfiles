@@ -264,28 +264,156 @@ set_git_global() {
   fi
 }
 
+check_required_command() {
+  local cmd="$1"
+  if have_cmd "$cmd"; then
+    ok "$cmd available: $(command -v "$cmd")"
+  else
+    warn "$cmd not found in PATH"
+  fi
+}
+
+is_vscode_extension_id() {
+  local value="${1,,}"
+  [[ "$value" =~ ^[a-z0-9][a-z0-9.-]*\.[a-z0-9][a-z0-9.-]*$ ]]
+}
+
+collect_vscode_extensions() {
+  local ext
+  {
+    code --list-extensions 2>/dev/null || true
+  } | while IFS= read -r ext; do
+    ext="${ext,,}"
+    if is_vscode_extension_id "$ext"; then
+      printf '%s\n' "$ext"
+    fi
+  done | awk '!seen[$0]++'
+}
+
+check_and_prune_vscode_extensions() {
+  local baseline_file="$1"
+  local ext
+  local extra
+  local failures=0
+  local baseline_tmp
+  local cleanup_tmp=0
+  local -a installed_exts=()
+  local -a extras=()
+
+  if [[ "$CODE_CLI_AVAILABLE" -ne 1 ]]; then
+    warn "Skipping VS Code extension baseline check ('code' CLI unavailable)"
+    return
+  fi
+
+  if [[ ! -f "$baseline_file" ]]; then
+    warn "VS Code extension baseline missing: $baseline_file"
+    return
+  fi
+
+  baseline_tmp="$(mktemp)"
+  cleanup_tmp=1
+
+  while IFS= read -r ext || [[ -n "$ext" ]]; do
+    ext="${ext#"${ext%%[![:space:]]*}"}"
+    ext="${ext%"${ext##*[![:space:]]}"}"
+    ext="${ext,,}"
+    [[ -z "$ext" ]] && continue
+    [[ "$ext" == \#* ]] && continue
+    if ! is_vscode_extension_id "$ext"; then
+      continue
+    fi
+    printf '%s\n' "$ext" >>"$baseline_tmp"
+  done <"$baseline_file"
+
+  sort -u "$baseline_tmp" -o "$baseline_tmp"
+  mapfile -t installed_exts < <(collect_vscode_extensions)
+
+  for ext in "${installed_exts[@]}"; do
+    if ! grep -Fxq "$ext" "$baseline_tmp"; then
+      extras+=("$ext")
+    fi
+  done
+
+  if [[ "${#extras[@]}" -eq 0 ]]; then
+    ok "VS Code extensions aligned with baseline"
+    rm -f "$baseline_tmp"
+    return
+  fi
+
+  warn "Found ${#extras[@]} VS Code extension(s) outside baseline"
+  for extra in "${extras[@]}"; do
+    echo "  - $extra"
+  done
+
+  if [[ "$FIX" -ne 1 ]]; then
+    rm -f "$baseline_tmp"
+    return
+  fi
+
+  for extra in "${extras[@]}"; do
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      dry_note "Would uninstall VS Code extension: $extra"
+      continue
+    fi
+
+    if code --uninstall-extension "$extra" >/dev/null 2>&1; then
+      echo "  Removed extension: $extra"
+      mark_fix_applied
+    else
+      warn "Failed to uninstall VS Code extension: $extra"
+      failures=$((failures + 1))
+    fi
+  done
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    ok "Planned VS Code extension prune (dry-run)"
+  elif [[ "$failures" -eq 0 ]]; then
+    ok "Pruned VS Code extensions to baseline"
+  fi
+
+  if [[ "$cleanup_tmp" -eq 1 ]]; then
+    rm -f "$baseline_tmp"
+  fi
+}
+
 # -----------------------------------------------------------------------------
 # Paths
 # -----------------------------------------------------------------------------
 ZSH_BOOTSTRAP_SOURCE="$DOTFILES_ROOT/zshrc.bootstrap"
 ZSHRC_TARGET="$HOME/.zshrc"
+BASHRC_SOURCE="$DOTFILES_ROOT/shell/bashrc"
+BASHRC_TARGET="$HOME/.bashrc"
 
 VSCODE_USER_DIR="$HOME/Library/Application Support/Code/User"
 VSCODE_SETTINGS_SOURCE="$DOTFILES_ROOT/vscode/settings.json"
 VSCODE_SETTINGS_TARGET="$VSCODE_USER_DIR/settings.json"
 VSCODE_KEYBINDINGS_SOURCE="$DOTFILES_ROOT/vscode/keybindings.json"
 VSCODE_KEYBINDINGS_TARGET="$VSCODE_USER_DIR/keybindings.json"
+VSCODE_EXTENSIONS_BASELINE="$DOTFILES_ROOT/vscode/extensions.txt"
+
+CODEX_AGENTS_SOURCE="$DOTFILES_ROOT/codex/AGENTS.md"
+CODEX_AGENTS_TARGET="$HOME/.codex/AGENTS.md"
+CODEX_CONFIG_SOURCE="$DOTFILES_ROOT/codex/config.toml"
+CODEX_CONFIG_TARGET="$HOME/.codex/config.toml"
+CODEX_SKILLS_SOURCE="$DOTFILES_ROOT/skills"
+CODEX_SKILLS_TARGET="$HOME/.codex/skills"
 
 EXPECTED_GIT_EDITOR="code --wait"
 EXPECTED_GIT_COMMIT_TEMPLATE="$DOTFILES_ROOT/git/commit-template"
+EXPECTED_GIT_HOOKS_PATH="$DOTFILES_ROOT/scripts/hooks"
+EXPECTED_ALLOWED_SIGNERS="$HOME/.ssh/allowed_signers"
 
 # -----------------------------------------------------------------------------
 # Declarative expectations
 # -----------------------------------------------------------------------------
 SYMLINK_SPECS=(
   "Zsh bootstrap|$ZSH_BOOTSTRAP_SOURCE|$ZSHRC_TARGET"
+  "Bash bootstrap|$BASHRC_SOURCE|$BASHRC_TARGET"
   "VS Code settings|$VSCODE_SETTINGS_SOURCE|$VSCODE_SETTINGS_TARGET"
   "VS Code keybindings|$VSCODE_KEYBINDINGS_SOURCE|$VSCODE_KEYBINDINGS_TARGET"
+  "Codex AGENTS|$CODEX_AGENTS_SOURCE|$CODEX_AGENTS_TARGET"
+  "Codex config|$CODEX_CONFIG_SOURCE|$CODEX_CONFIG_TARGET"
+  "Codex skills|$CODEX_SKILLS_SOURCE|$CODEX_SKILLS_TARGET"
 )
 
 READABLE_FILES=(
@@ -293,11 +421,17 @@ READABLE_FILES=(
   "$DOTFILES_ROOT/shell/20-exports.zsh"
   "$DOTFILES_ROOT/shell/30-paths.zsh"
   "$DOTFILES_ROOT/shell/40-aliases.zsh"
+  "$DOTFILES_ROOT/shell/bashrc"
 )
 
 EXECUTABLE_FILES=(
   "$DOTFILES_ROOT/scripts/install.sh"
   "$DOTFILES_ROOT/scripts/doctor.sh"
+  "$DOTFILES_ROOT/scripts/test-install-flags.sh"
+  "$DOTFILES_ROOT/scripts/test-doctor-flags.sh"
+  "$DOTFILES_ROOT/scripts/test-doctor-vscode-prune.sh"
+  "$DOTFILES_ROOT/scripts/test-pre-commit-gate.sh"
+  "$DOTFILES_ROOT/scripts/hooks/pre-commit"
 )
 
 # -----------------------------------------------------------------------------
@@ -344,6 +478,13 @@ if have_cmd brew; then
 else
   err "brew not found"
 fi
+
+section "Required tooling"
+check_required_command gh
+check_required_command node
+check_required_command shellcheck
+check_required_command git-cliff
+check_required_command go
 
 section "PATH hygiene"
 kv "PATH" "$PATH"
@@ -438,6 +579,9 @@ else
   fi
 fi
 
+section "VS Code Extensions"
+check_and_prune_vscode_extensions "$VSCODE_EXTENSIONS_BASELINE"
+
 section "SSH Agent"
 
 OP_SSH_SOCK="$(detect_1password_agent_socket || true)"
@@ -500,15 +644,19 @@ section "Git tooling"
 if have_cmd git; then
   editor="$(git config --global --get core.editor || true)"
   template="$(git config --global --get commit.template || true)"
+  hooks_path="$(git config --global --get core.hooksPath || true)"
   gpgfmt="$(git config --global --get gpg.format || true)"
   gpgsign="$(git config --global --get commit.gpgsign || true)"
   key="$(git config --global --get user.signingkey || true)"
+  allowed_signers_file="$(git config --global --get gpg.ssh.allowedSignersFile || true)"
 
   kv "core.editor" "$editor"
   kv "commit.template" "$template"
+  kv "core.hooksPath" "$hooks_path"
   kv "gpg.format" "$gpgfmt"
   kv "commit.gpgsign" "$gpgsign"
   kv "signingkey" "$key"
+  kv "gpg.ssh.allowedSignersFile" "$allowed_signers_file"
 
   if [[ "$editor" != "$EXPECTED_GIT_EDITOR" ]]; then
     if [[ "$CODE_CLI_AVAILABLE" -eq 1 ]]; then
@@ -543,6 +691,40 @@ if have_cmd git; then
     fi
   else
     ok "Git commit template configured correctly"
+  fi
+
+  if [[ "$hooks_path" != "$EXPECTED_GIT_HOOKS_PATH" ]]; then
+    warn "Git hooks path not set correctly"
+    if [[ "$FIX" -eq 1 ]]; then
+      set_git_global core.hooksPath "$EXPECTED_GIT_HOOKS_PATH"
+      if [[ "$DRY_RUN" -eq 1 ]]; then
+        ok "Planned hooks path repair (dry-run)"
+      else
+        ok "Repaired hooks path"
+      fi
+    fi
+  else
+    ok "Git hooks path configured correctly"
+  fi
+
+  if [[ "$allowed_signers_file" != "$EXPECTED_ALLOWED_SIGNERS" ]]; then
+    warn "Git allowed signers file not set correctly"
+    if [[ "$FIX" -eq 1 ]]; then
+      set_git_global gpg.ssh.allowedSignersFile "$EXPECTED_ALLOWED_SIGNERS"
+      if [[ "$DRY_RUN" -eq 1 ]]; then
+        ok "Planned allowed signers config repair (dry-run)"
+      else
+        ok "Repaired allowed signers config"
+      fi
+    fi
+  else
+    ok "Git allowed signers file configured correctly"
+  fi
+
+  if [[ -f "$EXPECTED_ALLOWED_SIGNERS" ]]; then
+    ok "allowed_signers file exists"
+  else
+    warn "allowed_signers file missing: $EXPECTED_ALLOWED_SIGNERS"
   fi
 
   if [[ "$gpgfmt" == "ssh" && "$gpgsign" == "true" && -n "$key" ]]; then
