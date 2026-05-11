@@ -1,0 +1,37 @@
+name: CI Security
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  security:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install security tooling
+        run: |
+          brew install shellcheck gitleaks
+          BREW_PREFIX="$(brew --prefix)"
+          echo "$BREW_PREFIX/bin" >> "$GITHUB_PATH"
+          echo "$BREW_PREFIX/sbin" >> "$GITHUB_PATH"
+
+      - name: Shell SAST
+        run: |
+          shellcheck -x scripts/install.sh scripts/doctor.sh scripts/hooks/pre-commit scripts/reviewer-learning-v1.sh
+
+      - name: Secret scanning
+        run: |
+          gitleaks detect --source . --no-git --redact --verbose
+
+      - name: Policy grep checks
+        run: |
+          if rg -n '(--no-gpg-sign|curl[[:space:]].*\\|[[:space:]]*(sh|bash))' scripts shell; then
+            echo 'Security policy match found.' >&2
+            exit 1
+          fi

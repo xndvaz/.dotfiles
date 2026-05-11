@@ -1,0 +1,42 @@
+name: CI Lint and Format
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint-format:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shell tooling
+        run: |
+          brew install bash shellcheck shfmt
+          BREW_PREFIX="$(brew --prefix)"
+          echo "$BREW_PREFIX/bin" >> "$GITHUB_PATH"
+          echo "$BREW_PREFIX/sbin" >> "$GITHUB_PATH"
+
+      - name: Bash syntax checks
+        run: |
+          bash -n scripts/install.sh
+          bash -n scripts/doctor.sh
+          bash -n scripts/test-install-flags.sh
+          bash -n scripts/test-doctor-flags.sh
+          bash -n scripts/test-doctor-vscode-prune.sh
+          bash -n scripts/test-pre-commit-gate.sh
+          bash -n scripts/hooks/pre-commit
+          bash -n scripts/reviewer-learning-v1.sh
+          bash -n slides/new-deck.sh
+
+      - name: ShellCheck
+        run: |
+          shellcheck -x scripts/install.sh scripts/doctor.sh scripts/test-install-flags.sh scripts/test-doctor-flags.sh scripts/test-doctor-vscode-prune.sh scripts/test-pre-commit-gate.sh scripts/hooks/pre-commit scripts/reviewer-learning-v1.sh slides/new-deck.sh
+
+      - name: shfmt diff check
+        run: |
+          shfmt -d scripts/install.sh scripts/doctor.sh scripts/test-install-flags.sh scripts/test-doctor-flags.sh scripts/test-doctor-vscode-prune.sh scripts/test-pre-commit-gate.sh scripts/hooks/pre-commit scripts/reviewer-learning-v1.sh slides/new-deck.sh

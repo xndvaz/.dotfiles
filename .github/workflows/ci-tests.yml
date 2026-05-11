@@ -1,0 +1,45 @@
+name: CI Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install runtime deps for smoke checks
+        run: |
+          brew install bash
+          BREW_PREFIX="$(brew --prefix)"
+          echo "$BREW_PREFIX/bin" >> "$GITHUB_PATH"
+          echo "$BREW_PREFIX/sbin" >> "$GITHUB_PATH"
+
+      - name: Installer flag smoke tests
+        run: bash scripts/test-install-flags.sh
+
+      - name: Doctor flag smoke tests
+        run: bash scripts/test-doctor-flags.sh
+
+      - name: Doctor VS Code prune tests
+        run: bash scripts/test-doctor-vscode-prune.sh
+
+      - name: Pre-commit gate smoke tests
+        run: bash scripts/test-pre-commit-gate.sh
+
+      - name: Doctor non-interactive checks
+        run: |
+          TEMP_HOME="$(mktemp -d)"
+          HOME="$TEMP_HOME" bash scripts/doctor.sh --non-interactive
+          HOME="$TEMP_HOME" bash scripts/doctor.sh --fix --dry-run --non-interactive
+
+      - name: Installer dry-run non-mutation check
+        run: |
+          TEMP_HOME="$(mktemp -d)"
+          HOME="$TEMP_HOME" bash scripts/install.sh --dry-run --non-interactive --configure-signing=no --configure-identity=no
