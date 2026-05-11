@@ -1,0 +1,7 @@
+mode = "auto_notify"
+threshold = 3
+max_auto_severity = "HIGH"
+require_approval_for_out_of_scope = true
+
+# This repository-level policy defines default guardrails.
+# Runtime learning state is written under: $HOME/.ai/reviewer-learning/

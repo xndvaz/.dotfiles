@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "$repo_root" ]]; then
+  echo "[pre-commit] Not inside a git repository."
+  exit 1
+fi
+
+cd "$repo_root"
+
+mapfile -t staged_files < <(git diff --cached --name-only --diff-filter=ACMR)
+if [[ "${#staged_files[@]}" -eq 0 ]]; then
+  exit 0
+fi
+
+is_shell_file() {
+  local file="$1"
+  case "$file" in
+  *.sh | *.bash | *.zsh) return 0 ;;
+  esac
+
+  if [[ ! -f "$file" ]]; then
+    return 1
+  fi
+
+  local first_line
+  first_line="$(head -n 1 "$file" 2>/dev/null || true)"
+  if [[ "$first_line" =~ ^\#\!.*\b(bash|sh|zsh)\b ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
+# ---------------------------------------------------------------------------
+# ShellCheck on staged shell files.
+# ---------------------------------------------------------------------------
+if command -v shellcheck >/dev/null 2>&1; then
+  shell_targets=()
+  for file in "${staged_files[@]}"; do
+    if is_shell_file "$file"; then
+      shell_targets+=("$file")
+    fi
+  done
+
+  if [[ "${#shell_targets[@]}" -gt 0 ]]; then
+    echo "[pre-commit] Running shellcheck on staged shell files..."
+    shellcheck --severity=warning "${shell_targets[@]}"
+  fi
+else
+  echo "[pre-commit] shellcheck not found. Skipping shell lint."
+fi
+
+# ---------------------------------------------------------------------------
+# Python formatter policy signal.
+# Ruff-first baseline with compatibility signal for Black-managed repos.
+# ---------------------------------------------------------------------------
+has_staged_python=0
+for file in "${staged_files[@]}"; do
+  if [[ "$file" == *.py ]]; then
+    has_staged_python=1
+    break
+  fi
+done
+
+if [[ "$has_staged_python" -eq 1 ]]; then
+  black_detected=0
+  ruff_detected=0
+
+  if [[ -f pyproject.toml ]] && rg -q '^\[tool\.black\]' pyproject.toml; then
+    black_detected=1
+  fi
+  if [[ -f .pre-commit-config.yaml ]] && rg -qi 'psf/black|id:\s*black\b' .pre-commit-config.yaml; then
+    black_detected=1
+  fi
+
+  if [[ -f pyproject.toml ]] && rg -q '^\[tool\.ruff\]' pyproject.toml; then
+    ruff_detected=1
+  fi
+  if [[ -f ruff.toml || -f .ruff.toml ]]; then
+    ruff_detected=1
+  fi
+
+  if [[ "$black_detected" -eq 1 && "$ruff_detected" -eq 0 ]]; then
+    echo "[pre-commit] Notice: this repository appears Black-managed."
+    echo "[pre-commit] Signal: Ruff-first baseline is overridden by local project policy."
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Codex reviewer gate (fail-closed).
+# Blocks commit if there are any findings or if review execution fails.
+# ---------------------------------------------------------------------------
+if ! command -v codex >/dev/null 2>&1; then
+  echo "[pre-commit] codex CLI is required for reviewer gate but was not found."
+  exit 1
+fi
+
+review_file="$(mktemp)"
+trap 'rm -f "$review_file"' EXIT
+
+review_prompt=$(
+  cat <<'PROMPT'
+You are running as a strict maintainer-level pre-commit reviewer.
+Review uncommitted changes and produce ONLY this format:
+
+VERDICT: PASS|FAIL
+FINDINGS: <integer>
+SEVERITY_COUNTS: CRITICAL=<n> HIGH=<n> MEDIUM=<n> LOW=<n>
+
+If FINDINGS > 0, append one line per finding:
+- [SEVERITY] path:line - concise issue
+
+Rules:
+- Any finding (including LOW) must produce VERDICT: FAIL.
+- If uncertain, prefer FAIL with explicit finding.
+PROMPT
+)
+
+echo "[pre-commit] Running Codex reviewer gate..."
+if ! codex exec review --uncommitted --ephemeral --output-last-message "$review_file" "$review_prompt" >/dev/null 2>&1; then
+  echo "[pre-commit] Reviewer execution failed (fail-closed). Commit blocked."
+  exit 1
+fi
+
+learning_script="$repo_root/scripts/reviewer-learning-v1.sh"
+if [[ -x "$learning_script" ]]; then
+  "$learning_script" "$review_file" >/dev/null 2>&1 || echo "[pre-commit] reviewer-learning-v1 skipped due to runtime error."
+fi
+
+if ! grep -q '^VERDICT:' "$review_file" || ! grep -q '^FINDINGS:' "$review_file"; then
+  echo "[pre-commit] Reviewer output missing required fields (fail-closed)."
+  echo "--- reviewer output ---"
+  cat "$review_file"
+  echo "-----------------------"
+  exit 1
+fi
+
+findings_raw="$(awk -F': ' '/^FINDINGS:/ {print $2; exit}' "$review_file" | tr -d '[:space:]')"
+if [[ -z "$findings_raw" || ! "$findings_raw" =~ ^[0-9]+$ ]]; then
+  echo "[pre-commit] Invalid FINDINGS value from reviewer (fail-closed)."
+  echo "--- reviewer output ---"
+  cat "$review_file"
+  echo "-----------------------"
+  exit 1
+fi
+
+if [[ "$findings_raw" -gt 0 ]]; then
+  echo "[pre-commit] Reviewer found $findings_raw issue(s). Commit blocked."
+  echo "--- reviewer output ---"
+  cat "$review_file"
+  echo "-----------------------"
+  exit 1
+fi
+
+if ! grep -Eq '^VERDICT:\s*PASS$' "$review_file"; then
+  echo "[pre-commit] Reviewer verdict is not PASS. Commit blocked."
+  echo "--- reviewer output ---"
+  cat "$review_file"
+  echo "-----------------------"
+  exit 1
+fi
+
+echo "[pre-commit] Reviewer gate passed."
+exit 0

@@ -1,0 +1,12 @@
+dry-run
+non-interactive
+idempotent
+missing validation
+error handling
+unsafe default
+path traversal
+command injection
+unsigned commit
+missing test
+broken contract
+regression
