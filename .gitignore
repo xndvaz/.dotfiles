@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+
+# Env / secrets
+*.env
+
+# Local AI tool state
+claude/settings.json
+codex/auth.json
+codex/sessions/
+codex/rules/
+.ai/cost.log
+
+# Local docs/build outputs
+slides/dist/

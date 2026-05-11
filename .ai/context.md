@@ -1,29 +1,30 @@
 # Project Context
 
 ## What this repository is
-This is a personal dotfiles repository for macOS. It provides a reproducible, modular development environment with explicit configuration and minimal hidden behavior.
+A personal macOS dotfiles repository that doubles as a reference implementation for automation/review patterns reused in other repositories.
 
 ## Main tools used
-- `zsh` with modular files in `shell/`
-- `bash` scripts in `scripts/` (`install.sh`, `doctor.sh`, smoke tests)
-- VS Code configuration in `vscode/`
-- Git templates/config helpers in `git/`
-- Homebrew as the expected package/bootstrap dependency on macOS
+- `zsh` modules in `shell/`
+- `bash` automation in `scripts/` (`install.sh`, `doctor.sh`, smoke suites including pre-commit gate, hooks)
+- Codex global bootstrap assets in `codex/`
+- Reviewer skills in `skills/`
+- VS Code baseline in `vscode/`
+- Git templates and release tooling in `git/`
+- Homebrew for macOS bootstrap dependencies
 
 ## Goals
-- Keep workstation setup reproducible across machines.
-- Keep configuration readable and easy to audit.
-- Keep setup scripts idempotent and safe to re-run.
-- Prefer explicit behavior over convenience magic.
-- Support both interactive local setup and non-interactive CI/headless bootstrap flows.
-- Keep shell quality checks automated in CI to catch regressions early.
-- Keep release history traceable through Git tags and commit history.
+- Keep workstation setup reproducible and idempotent.
+- Keep behavior explicit and auditable (no hidden automation).
+- Keep install/doctor safe in interactive and non-interactive/headless flows.
+- Keep VS Code extension baseline enforceable in doctor fix mode.
+- Keep maintainer-grade review quality via fail-closed pre-commit automation.
+- Keep CI split by concern for fast debugging (`lint/format`, `tests`, `security`).
+- Keep release automation traceable through tags and generated release notes.
 
 ## Constraints
-- Primary target is macOS.
-- Changes should avoid machine-specific hardcoding unless required.
-- Existing formatting/tooling rules in `.editorconfig` and `.prettierrc` must be respected.
-- Bootstrap/doctor flows should remain reliable for fresh environments.
-- Shell/bootstrap path resolution must remain location-independent (no hardcoded `~/.dotfiles` assumptions).
-- User-facing installer/doctor CLI behavior must stay consistent with script `--help` output and `README.md`.
-- Tagging conventions should remain documented and up to date.
+- Primary target is macOS (no Windows installer/doctor in this baseline).
+- Shell/bootstrap path resolution must remain location-independent.
+- CLI/documentation/test parity is required for installer/doctor flags.
+- Dry-run modes must not mutate user files or global git state.
+- Bounded filesystem lookups are required for startup/doctor responsiveness.
+- Repository files are en-US; user-facing chat language is user-selected.

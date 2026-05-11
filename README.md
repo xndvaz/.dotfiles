@@ -1,374 +1,151 @@
-# 🛠 xndvaz/.dotfiles
+# xndvaz/.dotfiles
 
-> A layered, reproducible macOS development foundation.
+A reproducible, macOS-first dotfiles baseline focused on explicit behavior, idempotent setup, and Codex-first review automation.
 
-This repository contains a modular VS Code + ZSH setup designed for
-clarity, consistency, and long-term maintainability.
-
-No hidden automation. No black-box scripts. No machine-specific hacks.
-
-Just explicit, readable infrastructure.
-
----
-
-# 🧠 Philosophy
-
-This setup prioritizes:
-
-- 🧱 Structure over improvisation
-- 🎯 Explicit formatting rules
-- 🧩 Modular shell architecture
-- 🔁 Reproducibility across machines
-- 🔐 Signed commits (optional bootstrap)
-- 🧼 Minimalism without fragility
-
-Readable files, explicit behavior, and repeatable bootstrap.
-
----
-
-# 📌 Who This Is For
-
-This setup can be useful if you:
-
-- Want a clean starting point for macOS development
-- Prefer explicit configuration over automation magic
-- Care about formatting consistency
-- Like modular shell architecture
-- Want something reproducible across machines
-- Want GitHub "Verified" commit signatures using SSH
-
-You can use it as-is, fork it, or adapt parts of it.
-
-It's a foundation — not a rigid framework.
-
----
-
-# 🏗 Architecture
+## Repository layout
 
 | Path | Purpose |
 | --- | --- |
-| `.ai/context.md` | Project goals and constraints |
-| `.ai/conventions.md` | Code and workflow conventions |
-| `.ai/decisions.md` | Technical decision log |
-| `.github/workflows/ci.yml` | Shell quality gates |
-| `git/commit-template` | User-managed Git commit template |
-| `scripts/install.sh` | Bootstrap and environment provisioning |
-| `scripts/doctor.sh` | Environment diagnostics and validation |
-| `scripts/test-install-flags.sh` | Installer CLI smoke tests |
-| `scripts/test-doctor-flags.sh` | Doctor CLI smoke tests |
-| `shell/10-base.zsh` | Core shell behavior |
-| `shell/20-exports.zsh` | Environment variables and SSH agent preference |
-| `shell/30-paths.zsh` | Homebrew-aware PATH management |
-| `shell/40-aliases.zsh` | Command shortcuts |
-| `vscode/settings.json` | VS Code settings |
-| `vscode/keybindings.json` | VS Code keybindings |
-| `vscode/extensions.txt` | VS Code extensions list |
-| `AGENTS.md` | Repository agent operating rules |
-| `LICENCE` | License text |
-| `README.md` | Project overview and onboarding |
-| `.editorconfig` | Cross-tool formatting baseline |
-| `.prettierrc` | Explicit formatting rules |
-| `.prettierignore` | Prettier ignore rules |
-| `zshrc.bootstrap` | Minimal shell loader |
+| `.ai/` | machine-readable project context, conventions, and decisions |
+| `.github/workflows/` | split CI workflows (`lint/format`, `tests`, `security`) and `release` |
+| `codex/` | Codex global config and AGENTS guidance |
+| `docs/` | human docs (`git-cliff`, skills usage, test catalog) |
+| `git/` | commit template, gitconfig template, git-cliff config |
+| `scripts/` | installer, doctor, smoke tests, reviewer learning helper |
+| `scripts/hooks/` | global git hooks (pre-commit reviewer gate) |
+| `shell/` | shell modules plus `bashrc` bootstrap |
+| `skills/` | `reviewer-<domain>` skill set |
+| `slides/` | Reveal.js templates and themes |
+| `vscode/` | settings, keybindings, extension baseline |
+| `zshrc.bootstrap` | location-independent shell entrypoint |
 
-Note: `.git/` is the Git internal database for this repository and is intentionally omitted.
-The tracked `git/` directory stores user-facing Git assets consumed by setup scripts.
-
----
-
-## 🧩 Editor Layer
-
-Controls formatting engines, UI ergonomics, and behavior.
-
-- Explicit default formatters
-- Controlled Prettier behavior (`requireConfig`)
-- Stable visual rules (ruler, whitespace, cursor behavior)
-- Minimal noise, predictable output
-
----
-
-## 🐚 Shell Layer
-
-ZSH configuration is modular — not a monolithic `.zshrc`.
-
-Each concern lives in its own file:
-
-- Base shell behavior
-- Aliases
-- Path management
-- Environment exports
-
-This avoids long-term configuration entropy.
-
----
-
-## 🛣 PATH Management
-
-`30-paths.zsh` ensures:
-
-- Homebrew tools are prioritized
-- Works on Apple Silicon and Intel
-- No hardcoded paths
-- Prevents common PATH duplication issues
-- Deterministic tool resolution
-
----
-
-## 🔐 SSH Agent Strategy
-
-This setup prefers the **1Password SSH Agent** when available.
-
-Behavior:
-
-- If 1Password agent socket exists → prefer it
-- Otherwise → fallback to macOS launchd agent
-- `doctor.sh --fix` can force the current session to use 1Password
-- Agent socket discovery uses a bounded glob lookup (no recursive `find` scan), keeping doctor/install runs responsive.
-
-No key generation. No key management. Only environment alignment.
-
----
-
-## 🔐 Git Commit Signing (Optional)
-
-The installer can optionally configure:
-
-- `gpg.format = ssh`
-- `commit.gpgsign = true`
-- `user.signingkey` from your active SSH agent
-
-This enables **SSH-based commit signing**, allowing GitHub to display:
-
-> ✅ Verified
-
-if your SSH key is added as a **Signing Key** in GitHub.
-
-### Important
-
-- The script does not create SSH keys.
-- The script does not manage your SSH agent.
-- You must manually add your SSH public key in:
-
-GitHub → Settings → SSH and GPG Keys → New signing key
-
-Safe by default with backups and explicit opt-in for optional Git setup.
-
----
-
-## 🧪 Doctor Layer
-
-`scripts/doctor.sh` validates your environment.
-
-It checks:
-
-- Bash version (>=4)
-- Homebrew presence and prefix
-- PATH hygiene and ordering
-- Python origin
-- VS Code CLI availability
-- SSH agent state
-- Git SSH signing configuration
-- Optional repair actions with dry-run preview support
-
-Run anytime:
+## Quick start (macOS)
 
 ```bash
-~/.dotfiles/scripts/doctor.sh
+git clone https://github.com/xndvaz/.dotfiles.git "$HOME/.dotfiles"
+cd "$HOME/.dotfiles"
+make install
 ```
 
-Or:
+Dry-run preview:
 
 ```bash
-~/.dotfiles/scripts/doctor.sh --fix
+make dry-run
 ```
 
-For CI/headless runs:
+Validation:
 
 ```bash
-~/.dotfiles/scripts/doctor.sh --fix --non-interactive
+make doctor
+bash scripts/test-pre-commit-gate.sh
 ```
 
-For previewing repair actions without applying changes:
+## Make targets
+
+- `make install`: run installer
+- `make dry-run`: installer dry-run mode
+- `make doctor`: diagnostics
+- `make doctor-fix`: diagnostics with fix mode
+- `make update`: fast-forward pull + non-interactive install
+
+## Installer and doctor behavior
+
+### Installer (`scripts/install.sh`)
+
+Supported automation flags:
+- `--non-interactive`
+- `--dry-run`
+- `--strict-extensions`
+- `--configure-signing=<yes|no|prompt>`
+- `--configure-identity=<yes|no|prompt>`
+- `--signing-key="<algo pubkey>"`
+- `--git-name="<name>"`
+- `--git-email="<email>"`
+
+Key actions:
+- links `~/.zshrc` and `~/.bashrc`
+- links VS Code settings/keybindings
+- installs baseline VS Code extensions
+- links Codex config (`~/.codex/AGENTS.md`, `~/.codex/config.toml`, `~/.codex/skills`)
+- installs required tooling on macOS (`gh`, `node`, `shellcheck`, `git-cliff`, `go`)
+- configures git editor, commit template, hooksPath, signing/identity (optional flows)
+- renders `~/.gitconfig` from `git/config.template` when required values exist
+- ensures `~/.ssh/allowed_signers` entry for git SSH signature verification
+- runs doctor at the end
+
+### Doctor (`scripts/doctor.sh`)
+
+Supported flags:
+- `--fix`
+- `--non-interactive`
+- `--dry-run`
+
+Checks include:
+- symlink correctness (shell, VS Code, Codex)
+- VS Code extension baseline drift (`vscode/extensions.txt`)
+- shell module readability and script executability
+- Homebrew and PATH hygiene
+- required tooling availability
+- SSH agent and key visibility
+- git editor/template/hooks/signing/allowed signers
+
+Fix behavior:
+- `doctor --fix` prunes VS Code extensions not present in `vscode/extensions.txt`
+- `doctor --fix --dry-run` only reports planned extension removals
+
+## Codex-first review system
+
+- global hook path is set to `scripts/hooks`
+- `scripts/hooks/pre-commit` runs:
+  1. staged shellcheck
+  2. formatter-policy signal for Python repos (Ruff-first baseline, Black detection signal)
+  3. Codex maintainer-grade reviewer gate (fail-closed)
+- any reviewer finding blocks commit
+- reviewer execution failure blocks commit (fail-closed)
+- reviewer-learning v1 updates local learning state and emits improvement notifications
+
+Skill docs: `docs/using-skills.md`
+
+## VS Code baseline
+
+Highlights:
+- Ruff-first Python formatter baseline
+- explicit code actions on save (`organizeImports` and `fixAll`)
+- YAML formatter via Prettier
+- Python analysis (`typeCheckingMode=basic`, auto-import completions)
+- MCP discovery enabled
+- existing visual/editor ergonomics preserved
+
+Extensions baseline is in `vscode/extensions.txt`.
+
+## Slides baseline (Reveal.js)
+
+This repo uses Reveal.js + custom themes instead of Marp.
+
+- template: `slides/template.html`
+- themes: `slides/themes/default`, `slides/themes/contrast`
+- scaffold helper: `slides/new-deck.sh`
+
+Create a deck:
 
 ```bash
-~/.dotfiles/scripts/doctor.sh --fix --dry-run --non-interactive
+bash slides/new-deck.sh roadmap default
 ```
 
----
+## CI and release workflows
 
-## 🔁 Installation Layer
+- `ci-lint-format.yml`: syntax, shellcheck, shfmt
+- `ci-tests.yml`: smoke suites (install/doctor/doctor-vscode-prune/pre-commit gate) + doctor/install dry-run checks
+- `ci-security.yml`: shell SAST, secret scanning, policy grep
+- `release.yml`: tag-driven release notes with `git-cliff`
 
-`scripts/install.sh` makes the setup reproducible.
+## Reference docs
 
-It:
+- `docs/git-cliff.md`
+- `docs/using-skills.md`
+- `docs/test-catalog.md`
 
-- Ensures Bash 4+ (auto-bootstrap via Homebrew if needed)
-- Backs up existing configs
-- Creates symlinks
-- Installs extensions
-- Supports strict extension mode (`--strict-extensions`)
-- Supports dry-run audit mode (`--dry-run`)
-- Optionally configures SSH commit signing
-- Supports deterministic signing key selection (`--signing-key`)
-- Optionally configures Git identity (with CLI override support)
-- Supports non-interactive automation and CI/headless usage
-- Runs doctor automatically after installation
-- Is safe to re-run
+## Language policy
 
-Idempotent by design.
-
----
-
-# 🚀 Rebuild From Scratch (macOS)
-
-This setup assumes a clean macOS environment.
-
----
-
-## 1️⃣ Install VS Code
-
-Download: https://code.visualstudio.com/
-
-After installation:
-
-Open VS Code → Cmd + Shift + P → Run:
-
-Shell Command: Install 'code' command in PATH
-
-Verify:
-
-```bash
-code --version
-```
-
----
-
-## 2️⃣ Install JetBrains Mono (Optional)
-
-Download: https://www.jetbrains.com/lp/mono/
-
-Install the font in macOS.
-
-Restart VS Code after installation.
-
----
-
-## 3️⃣ Install Homebrew
-
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-Verify:
-
-```bash
-brew --version
-```
-
----
-
-## 4️⃣ Install Python (Recommended)
-
-```bash
-brew install python
-```
-
-Verify:
-
-```bash
-python3 --version
-```
-
----
-
-## 5️⃣ Clone This Repository
-
-```bash
-export DOTFILES_DIR="$HOME/.dotfiles"
-git clone https://github.com/xndvaz/.dotfiles.git "$DOTFILES_DIR"
-```
-
----
-
-## 6️⃣ Run Installer
-
-```bash
-bash "$DOTFILES_DIR/scripts/install.sh"
-```
-
-During installation, you may be asked:
-
-> Configure now? (Y/N)
-
-If Git identity is missing, installer prompt mode can also ask for:
-
-> Configure now? (Y/N)
-
-If you cloned to a different directory, set `DOTFILES_DIR` accordingly before running commands below.
-
-For automated/bootstrap scripts, you can run non-interactively:
-
-```bash
-bash "$DOTFILES_DIR/scripts/install.sh" --non-interactive --strict-extensions --configure-signing=no --configure-identity=yes --git-name "Your Name" --git-email "you@example.com"
-```
-
-If stdin is not a TTY (for example in CI/pipelines), installer prompts are automatically disabled.
-The same non-interactive behavior is propagated to the post-install doctor run.
-
-For strict CI semantics, use `--configure-signing=yes` / `--configure-identity=yes`
-to fail fast when required prerequisites are missing.
-
-For an audit run that prints planned actions without modifying your machine:
-
-```bash
-bash "$DOTFILES_DIR/scripts/install.sh" --dry-run --non-interactive --configure-signing=no --configure-identity=no
-```
-
-If you need SSH signing in non-interactive mode and have multiple keys loaded:
-
-```bash
-bash "$DOTFILES_DIR/scripts/install.sh" --non-interactive --configure-signing=yes --signing-key "ssh-ed25519 AAAA...YOUR_PUBLIC_KEY..."
-```
-
-After installation, the doctor runs automatically.
-
----
-
-## 7️⃣ Validate With Doctor
-
-```bash
-bash "$DOTFILES_DIR/scripts/doctor.sh" --non-interactive
-```
-
----
-
-## 8️⃣ Restart VS Code
-
-Environment restored. Signed commits ready.
-
----
-
-# ✅ Quality Gates
-
-CI runs the following shell checks on each push/PR:
-
-- `bash -n` for `install.sh`, `doctor.sh`, `test-install-flags.sh`, and `test-doctor-flags.sh`
-- `shellcheck -x` for shell linting
-- `shfmt -d` for formatting consistency
-- `scripts/test-install-flags.sh` and `scripts/test-doctor-flags.sh` smoke matrices
-- `scripts/doctor.sh --non-interactive` and `--fix --dry-run --non-interactive`
-
-The workflow is defined in `.github/workflows/ci.yml`.
-
----
-
-# 🧭 Design Principles
-
-This repository favors:
-
-- Transparency over abstraction
-- Explicit behavior over silent automation
-- Portability over local hacks
-- Stability over trend adoption
-
-It is designed to age well.
+- repository files (code/docs/config): en-US
+- user-facing chat language: user-selected

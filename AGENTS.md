@@ -1,46 +1,50 @@
 # Agent Guide
 
 ## Project overview
-This repository contains reproducible macOS dotfiles for a development environment centered on:
-- modular Zsh configuration
-- VS Code settings and extension lists
-- bootstrap and diagnostics scripts
-
-The goal is explicit, readable, idempotent configuration rather than hidden automation.
+This repository provides reproducible macOS dotfiles with explicit, idempotent automation.
+It is also used as a reference baseline for patterns reused in other repositories.
 
 ## Repository structure
-- `scripts/`: setup, validation, and smoke-test scripts (`install.sh`, `doctor.sh`, `test-install-flags.sh`, `test-doctor-flags.sh`)
-- `shell/`: ordered Zsh modules (`10-base.zsh`, `20-exports.zsh`, etc.)
-- `vscode/`: editor settings, keybindings, and extensions list
-- `git/`: Git-related templates (for example commit template)
-- `zshrc.bootstrap`: minimal loader for shell modules
+- `scripts/`: setup, diagnostics, smoke tests (install/doctor/pre-commit gate), and reviewer-learning helper scripts
+- `scripts/hooks/`: global git hooks (pre-commit reviewer gate)
+- `shell/`: ordered Zsh modules plus `bashrc` bootstrap
+- `vscode/`: editor settings, keybindings, and extensions baseline
+- `git/`: git templates/config (`commit-template`, `config.template`, `cliff.toml`)
+- `codex/`: Codex global guidance/config linked into `~/.codex/`
+- `skills/`: `reviewer-<domain>` skill set
+- `docs/`: human docs (`git-cliff`, skills usage, test catalog)
+- `slides/`: Reveal.js templates and themes
+- `zshrc.bootstrap`: location-independent shell entrypoint
 
 ## Current behavior notes
-- `zshrc.bootstrap` resolves module paths from its own file path. Do not reintroduce `~/.dotfiles` hardcoding.
-- `scripts/install.sh` must keep CLI/documentation parity for automation flags (`--non-interactive`, `--dry-run`, `--strict-extensions`, `--configure-signing`, `--configure-identity`, `--signing-key`, `--git-name`, `--git-email`).
-- `scripts/install.sh` must propagate `--non-interactive` behavior to post-install `doctor.sh` execution.
-- `scripts/install.sh --dry-run` must not mutate user files or global git configuration.
-- `scripts/doctor.sh` must remain safe for headless execution (`--non-interactive`, non-TTY auto-detect, no forced GUI launch).
-- `scripts/doctor.sh --dry-run` must not apply filesystem/git/environment fixes.
-- `scripts/test-install-flags.sh` and `scripts/test-doctor-flags.sh` should remain fast smoke suites safe for CI runners.
-- 1Password SSH agent socket detection in shell/scripts must avoid recursive scans under `~/Library/Group Containers`; use bounded glob/compgen lookups.
-- CI shell quality checks are defined in `.github/workflows/ci.yml` and must stay aligned with local script behavior.
+- `zshrc.bootstrap` must remain location-independent; do not hardcode `~/.dotfiles`.
+- `scripts/install.sh` CLI contracts must stay aligned with README/help/tests for:
+  - `--non-interactive`, `--dry-run`, `--strict-extensions`,
+  - `--configure-signing`, `--configure-identity`,
+  - `--signing-key`, `--git-name`, `--git-email`.
+- Installer dry-run must not mutate user files or global git config.
+- Installer non-interactive mode must propagate to post-install doctor execution.
+- `scripts/doctor.sh` must remain headless-safe (`--non-interactive`, no forced GUI launch).
+- `scripts/doctor.sh --fix` prunes VS Code extensions outside `vscode/extensions.txt`; `--dry-run` must only report planned removals.
+- Doctor dry-run must not apply filesystem/git/environment fixes.
+- 1Password socket detection must stay bounded (no recursive scans under Group Containers).
+- Pre-commit reviewer gate is fail-closed: any finding blocks commit.
+- Keep workflow split (`ci-lint-format`, `ci-tests`, `ci-security`, `release`) and aligned with local behavior.
 
 ## Required reads before changes
-Agents must read and follow the files in `.ai/` before making edits:
+Read and follow:
 - `.ai/context.md`
 - `.ai/conventions.md`
 - `.ai/decisions.md`
 
-If guidance conflicts, prioritize:
-1. `.ai/conventions.md` for style and structure
-2. `.ai/context.md` for goals and constraints
-3. `.ai/decisions.md` for historical decisions and rationale
+Priority on conflict:
+1. `.ai/conventions.md`
+2. `.ai/context.md`
+3. `.ai/decisions.md`
 
 ## Mandatory workflow
-Before changing code or configuration, agents must analyze the repository:
-1. Inspect relevant files and current behavior.
-2. Check existing conventions and decision history in `.ai/`.
-3. Make minimal, scoped changes that preserve reproducibility and idempotency.
-4. Update `.ai/decisions.md` when introducing a significant technical decision.
-5. Run quick validation checks for touched scripts (for example `bash -n`, `scripts/test-install-flags.sh`, `scripts/test-doctor-flags.sh`, and relevant `--help`/non-interactive flows).
+Before changing code/config:
+1. Inspect current implementation and relevant scripts/docs.
+2. Preserve reproducibility and idempotency with minimal scoped changes.
+3. Update `.ai/decisions.md` when introducing significant technical decisions.
+4. Run quick validations for touched scripts (`bash -n`, smoke suites, and relevant non-interactive/dry-run flows).

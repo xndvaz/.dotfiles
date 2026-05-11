@@ -202,3 +202,90 @@ Use this file to track decisions that affect architecture, workflows, or long-te
   Move to a full shell testing framework; rejected as unnecessary for current repository complexity.
 - Supersedes / Superseded by:
   None.
+
+## DEC-20260406-codex-first-reference-baseline
+- Date: 2026-04-06
+- Status: accepted
+- Context:
+  The repository is now used as a reference baseline for multiple projects, and the owner currently uses Codex as the only AI coding interface.
+- Decision:
+  Standardize on a Codex-first structure with `codex/` config, `skills/reviewer-*`, and global hook-based review enforcement.
+  Defer Claude-specific repository scaffolding.
+- Consequences:
+  Reduces maintenance overhead by focusing on one AI stack.
+  Improves consistency of review automation across projects.
+- Alternatives considered:
+  Maintain dual Claude/Codex scaffolding; rejected due to duplicated maintenance for current usage.
+- Supersedes / Superseded by:
+  None.
+
+## DEC-20260406-git-template-and-fail-closed-review-gate
+- Date: 2026-04-06
+- Status: accepted
+- Context:
+  Git bootstrap settings and quality gates varied between environments.
+  Commit-time review needed stricter enforcement aligned with maintainer-level standards.
+- Decision:
+  Add deterministic `~/.gitconfig` rendering from `git/config.template` and maintain `~/.ssh/allowed_signers`.
+  Add a fail-closed pre-commit gate combining staged shellcheck and Codex reviewer output.
+  Any reviewer finding blocks commit.
+- Consequences:
+  Improves consistency and signature/verification hygiene.
+  Increases commit-time strictness and may add latency.
+- Alternatives considered:
+  Advisory-only review gate; rejected due to weaker enforcement.
+  Manual git config setup; rejected due to drift risk.
+- Supersedes / Superseded by:
+  None.
+
+## DEC-20260406-split-ci-workflows-and-release-automation
+- Date: 2026-04-06
+- Status: accepted
+- Context:
+  A single generic CI workflow made failure triage slower.
+- Decision:
+  Split CI into dedicated workflows: `ci-lint-format`, `ci-tests`, and `ci-security`.
+  Add tag-driven `release` workflow using `git-cliff`.
+- Consequences:
+  Improves signal clarity and debug speed.
+  Adds more workflow files to maintain.
+- Alternatives considered:
+  Keep one monolithic CI workflow; rejected due to mixed failure domains.
+- Supersedes / Superseded by:
+  Supersedes the prior single-workflow CI layout decision.
+
+## DEC-20260406-revealjs-slides-and-language-policy
+- Date: 2026-04-06
+- Status: accepted
+- Context:
+  Presentation authoring needed higher visual control, and language usage needed explicit policy for repository consistency.
+- Decision:
+  Adopt Reveal.js with custom multi-theme templates as the presentation baseline.
+  Keep repository files in en-US while allowing user-selected chat response language.
+  Track `codex_hooks` as roadmap-only until stable support is available.
+- Consequences:
+  Enables stronger visual identity for slides.
+  Keeps repository content consistent for reuse and collaboration.
+- Alternatives considered:
+  Keep Marp-first baseline; rejected due to lower visual flexibility for the target use case.
+- Supersedes / Superseded by:
+  None.
+
+## DEC-20260406-doctor-fix-prunes-vscode-extensions
+- Date: 2026-04-06
+- Status: accepted
+- Context:
+  The installer is intentionally clean-install focused, but workstation drift still happens over time in VS Code extensions.
+- Decision:
+  Keep `install.sh` extension behavior additive (install baseline only).
+  Enforce extension baseline hygiene in `doctor.sh` by detecting drift against `vscode/extensions.txt`, and pruning out-of-baseline extensions when running `doctor --fix`.
+  Preserve dry-run safety by reporting planned removals without uninstalling in `doctor --fix --dry-run`.
+- Consequences:
+  Keeps install semantics simple and predictable.
+  Moves lifecycle cleanup into doctor where maintenance actions are expected.
+  Increases strictness of doctor fix mode by removing extensions not explicitly allowed by baseline.
+- Alternatives considered:
+  Remove extensions during install; rejected because install should stay clean-install oriented.
+  Add a separate prune script only; rejected in favor of centralizing maintenance in doctor.
+- Supersedes / Superseded by:
+  None.

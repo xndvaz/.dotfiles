@@ -5,36 +5,47 @@
   - UTF-8, LF endings, final newline
   - spaces for indentation
   - 2-space indent by default, 4 spaces for Python files
-- Follow `.prettierrc` for files managed by Prettier:
-  - single quotes
-  - semicolons
-  - trailing commas where valid
-  - max line width 100
+- Follow `.prettierrc` for Prettier-managed files.
 - For shell scripts, prefer:
   - `#!/usr/bin/env bash`
-  - `set -euo pipefail` when appropriate
-  - clear function names and defensive checks
+  - `set -euo pipefail`
+  - explicit function names and defensive checks
 
 ## Repository organization rules
-- Keep top-level concerns separated by folder:
+- Keep concerns separated by top-level directory:
   - `scripts/` for automation and diagnostics
-  - `shell/` for shell runtime modules
-  - `vscode/` for editor configuration
-  - `git/` for Git templates/helpers
-- Preserve deterministic shell load order via numeric prefixes in `shell/`.
-- Keep bootstrap and doctor scripts location-independent and safe to rerun.
-- Keep `install.sh` / `doctor.sh` interactive and non-interactive behaviors explicit and predictable (avoid hidden prompts in non-TTY contexts).
-- Prefer bounded filesystem lookups over recursive scans in startup/doctor paths (for example socket discovery) to avoid hangs on large macOS container directories.
-- Keep shell quality gates aligned between local checks and CI (`bash -n`, `shellcheck`, `shfmt -d`, installer smoke tests, doctor non-interactive run).
-- Keep smoke tests scenario-focused:
-  - `test-install-flags.sh` for installer CLI semantics and dry-run behavior
-  - `test-doctor-flags.sh` for doctor CLI semantics and dry-run behavior
+  - `scripts/hooks/` for global git hooks
+  - `shell/` for runtime shell modules
+  - `vscode/` for editor baseline
+  - `git/` for git templates/tooling
+  - `codex/` for Codex global assets
+  - `skills/` for reviewer skills (`reviewer-<domain>`)
+  - `docs/` for human-oriented operational docs
+  - `slides/` for Reveal.js templates/themes
+- Preserve deterministic shell load order via numeric prefixes.
+- Keep bootstrap/install/doctor location-independent and idempotent.
+- Keep installer/doctor CLI behavior explicit and predictable in non-TTY mode.
+- Keep doctor extension hygiene explicit: `doctor --fix` may prune VS Code extensions to `vscode/extensions.txt`, while `--dry-run` only reports planned removals.
+- Prefer bounded filesystem lookups over recursive scans in startup/doctor paths.
+- Keep local and CI quality gates aligned.
 
-## Guidelines for adding new files
-- Place files in the most specific existing directory before creating new top-level folders.
-- Name files by concern and purpose (for example `50-tooling.zsh`).
-- Add brief header comments only when behavior is non-obvious.
-- When introducing a new pattern or architectural change, record it in `.ai/decisions.md`.
-- Update `README.md` when a new file changes user-facing setup behavior.
-- When changing installer/doctor CLI semantics, update all of the following in the same change: script `--help`, `README.md`, smoke tests, and `.ai/decisions.md`.
-- When preparing a release, create an annotated Git tag from `main` and keep tag messages descriptive.
+## CI workflow conventions
+- Keep workflows split by concern:
+  - `ci-lint-format`
+  - `ci-tests`
+  - `ci-security`
+  - `release`
+- Avoid monolithic CI files that mix unrelated failure domains.
+
+## Review automation conventions
+- Pre-commit reviewer gate is fail-closed.
+- Any reviewer finding blocks commit.
+- Reviewer naming contract: `reviewer-<domain>`.
+- `reviewer-python` acts as router to general vs scientific reviewer.
+- Learning v1 may auto-tune only in-scope patterns and must log improvement notifications.
+- Out-of-scope learning proposals must be approval-required.
+
+## Documentation and language
+- Repository files must be written in en-US.
+- User chat language is user-selected and can differ from repository language.
+- Update `README.md`, docs, and `.ai/decisions.md` together when behavior changes are user-visible.
